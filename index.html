@@ -59,14 +59,16 @@
           <label for="potassium">Poziom potasu (mmol/L)</label>
           <input type="text" id="potassium" value="3.5">
         </div>
-        <button type="submit">Pobierz receptę (XLSX)</button>
+        <button type="submit">Pobierz receptę</button>
       </form>
     </div>
 
     <!-- Środkowy kontener: zalecane dawkowanie -->
     <div class="container requirements">
       <h2>Zapotrzebowanie (dobowe)</h2>
-      <p>Zalecane dawkowanie preparatu: <strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dzień</strong></p>
+      <p>Zalecane dawkowanie preparatu: <br><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dzień</strong></p>
+      <br>
+      <p>Maksymalna zalecana objętość: <br><strong><span id="reqAbsMax">0</span> ml/dzień</strong></p>
     </div>
 
     <!-- Prawy kontener: mieszanina -->
@@ -98,7 +100,7 @@
           <td class="input"><input type="text" id="add4" placeholder="ml"></td>
           <td></td>
         </tr>
-                <tr>
+        <tr>
           <td class="label">6. Vitalipid N Infant amp. 10 ml</td>
           <td class="input"><input type="text" id="add5" placeholder="ml"></td>
           <td></td>
