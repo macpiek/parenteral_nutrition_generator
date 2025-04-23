@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Recepta żywienia parenteralnego</title>
+  <!-- ExcelJS (preserves formatting) -->
+  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <!-- FileSaver do pobierania pliku -->
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <!-- Podłączony zewnętrzny styl -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Lewy kontener: dane pacjenta -->
+    <div class="container">
+      <h1>Recepta żywienia parenteralnego</h1>
+      <form id="daneForm">
+        <div class="form-group">
+          <label for="fullname">Imię i nazwisko</label>
+          <input type="text" id="fullname" value="Jan Kowalski">
+        </div>
+        <div class="form-group">
+          <label for="pesel">PESEL</label>
+          <input type="text" id="pesel" value="80010112345">
+          <hr class="divider">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="dateFrom">Data od</label>
+            <input type="date" id="dateFrom">
+          </div>
+          <div class="form-group">
+            <label for="dateTo">Data do</label>
+            <input type="date" id="dateTo">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="weight">Masa ciała (kg)</label>
+          <input type="text" id="weight" value="70">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productType">Worek</label>
+            <select id="productType">
+              <option value="SmofKabiven">SmofKabiven</option>
+              <option value="Kabiven">Kabiven</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="nutritionType">Rodzaj żywienia</label>
+            <select id="nutritionType">
+              <option value="obwodowe" selected>Obwodowe</option>
+              <option value="centralne">Centralne</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="potassium">Poziom potasu (mmol/L)</label>
+          <input type="text" id="potassium" value="3.5">
+        </div>
+        <button type="submit">Pobierz receptę (XLSX)</button>
+      </form>
+    </div>
+
+    <!-- Środkowy kontener: zalecane dawkowanie -->
+    <div class="container requirements">
+      <h2>Zapotrzebowanie (dobowe)</h2>
+      <p>Zalecane dawkowanie preparatu: <strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dzień</strong></p>
+    </div>
+
+    <!-- Prawy kontener: mieszanina -->
+    <div class="container extras">
+      <h2>Mieszanina</h2>
+      <table class="extras-table">
+        <tr>
+          <td class="label"><strong>1. <span id="selectedBagCell"></span></strong></td>
+          <td class="input"><select id="bagVolume"></select></td>
+          <td class="calories"><span id="bagCalories"></span> kcal</td>
+        </tr>
+        <tr>
+          <td class="label">2. Glycophos fiol. 20 ml</td>
+          <td class="input"><input type="text" id="add1" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">3. Addamel N amp. 10 ml</td>
+          <td class="input"><input type="text" id="add2" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">4. Soluvit N fiol.</td>
+          <td class="input"><input type="text" id="add3" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">5. Vitalipid N Adult amp. 10 ml</td>
+          <td class="input"><input type="text" id="add4" placeholder="ml"></td>
+          <td></td>
+        </tr>
+                <tr>
+          <td class="label">6. Vitalipid N Infant amp. 10 ml</td>
+          <td class="input"><input type="text" id="add5" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">7. Dipeptiven but. 50 ml</td>
+          <td class="input"><input type="text" id="add6" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">8. Dipeptiven but. 100 ml</td>
+          <td class="input"><input type="text" id="add7" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">9. Omegaven but. 50 ml</td>
+          <td class="input"><input type="text" id="add8" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">10. Omegaven but. 100 ml</td>
+          <td class="input"><input type="text" id="add9" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">11. Kalium chlor. 15% amp. 10 ml</td>
+          <td class="input"><input type="text" id="add10" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">12. Kalium chlor. 15% amp. 20 ml</td>
+          <td class="input"><input type="text" id="add11" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">13. Calcium chloratum 10% amp. 10 ml</td>
+          <td class="input"><input type="text" id="add12" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">14. Calcium glubionas 10% amp. 10 ml</td>
+          <td class="input"><input type="text" id="add13" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">15. Magnesi sulf. 20% amp. 10 ml</td>
+          <td class="input"><input type="text" id="add14" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">16. Vit. B1 50mg/ml amp. 2 ml</td>
+          <td class="input"><input type="text" id="add15" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">17. Vit. C 100 mg/ml amp. 5 ml</td>
+          <td class="input"><input type="text" id="add16" placeholder="ml"></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td class="label">18. 0,9% Natr.Chlor. amp. 10 ml</td>
+          <td class="input"><input type="text" id="add17" placeholder="ml"></td>
+          <td></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <script src="script.js" defer></script>
+</body>
+</html>
