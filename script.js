@@ -137,8 +137,16 @@ document.addEventListener("DOMContentLoaded", () => {
     ws.getCell("C7").value = data.weight;
     ws.getCell("C8").value = data.dateFrom;
     ws.getCell("C9").value = data.dateTo;
-    // C11: sposób podawania
-    ws.getCell("C11").value = nutritSel.value === "centralne" ? "centralna" : "obwodowa";
+
+    /*  Dwuwierszowy zapis sposobu żywienia:
+        C11 – „Obwodowa”          lub „Obwodowa X”
+        C12 – „Centralna X”      lub „Centralna”
+        X pojawia się przy aktualnie wybranym sposobie.
+    */
+    const isCentral = nutritSel.value === "centralne";
+
+    ws.getCell("C11").value = isCentral ? "Obwodowa"     : "Obwodowa X";
+    ws.getCell("C12").value = isCentral ? "Centralna X"  : "Centralna";
 
     // wiersze 23-26 – nowa kolejność
     const rowMap = {
