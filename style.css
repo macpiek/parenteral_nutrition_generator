@@ -1,175 +1,174 @@
-/* style.css - scalony plik CSS */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ------------- plik style.css ------------- */
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
 }
 
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f0f4f8;
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
+body{
+  font-family:Arial, sans-serif;
+  background-color:#f0f4f8;
+  display:flex;
+  justify-content:center;
+  padding:2rem;
 }
 
 /* Ogólne kontenery */
-.container {
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  max-width: 1200px; /* poszerzone */
-  width: 100%;
-  padding: 2rem;
+.container{
+  background:#ffffff;
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  max-width:1200px;       /* poszerzone */
+  width:100%;
+  padding:2rem;
 }
 
 .container h1,
-.container h2 {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #333;
-  font-size: 1.5rem;
+.container h2{
+  text-align:center;
+  margin-bottom:1.5rem;
+  color:#333;
+  font-size:1.5rem;
 }
 
 /* Divider pod PESEL */
-.divider {
-  border: none;
-  border-top: 1px solid #ccd0d5;
-  margin: 2rem -2rem;
+.divider{
+  border:none;
+  border-top:1px solid #ccd0d5;
+  margin:2rem -2rem;
 }
 
 /* Pola formularza */
-.form-group {
-  margin-bottom: 1.25rem;
-}
+.form-group{margin-bottom:1.25rem;}
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-  color: #555;
+.form-group label{
+  display:block;
+  margin-bottom:0.5rem;
+  font-weight:bold;
+  color:#555;
 }
 
 .form-group input,
-.form-group select {
-  width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccd0d5;
-  border-radius: 4px;
-  font-size: 1rem;
-  color: #333;
-  transition: border-color 0.2s, box-shadow 0.2s;
+.form-group select{
+  width:100%;
+  padding:0.6rem;
+  border:1px solid #ccd0d5;
+  border-radius:4px;
+  font-size:1rem;
+  color:#333;
+  transition:border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input:focus,
-.form-group select:focus {
-  border-color: #007acc;
-  box-shadow: 0 0 0 3px rgba(0,122,204,0.2);
-  outline: none;
+.form-group select:focus{
+  border-color:#007acc;
+  box-shadow:0 0 0 3px rgba(0,122,204,0.2);
+  outline:none;
 }
 
-/* Flexbox wrapper dla obu kontenerów */
-.wrapper {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
+/* Flexbox wrapper dla kontenerów */
+.wrapper{
+  display:flex;
+  gap:2rem;
+  align-items:flex-start;
 }
 
-/* Układ wiersza z dwoma polami (data od/do, worek/rodzaj żywienia) */
-.form-row {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
+/* Układ wiersza z dwoma polami */
+.form-row{
+  display:flex;
+  gap:1rem;
+  margin-bottom:0.5rem;
 }
 
-.form-row .form-group {
-  flex: 1;
-  margin-bottom: 0;
+.form-row .form-group{
+  flex:1;
+  margin-bottom:0;
 }
 
 /* Tabela dodatków */
-.extras-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: auto; /* pozwól przeglądarce ustalić szerokości wg zawartości */
+.extras-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:auto;
 }
 
-.extras-table td {
-  padding: 0.25rem 0.5rem;
-  vertical-align: middle;
+.extras-table td{
+  padding:0.25rem 0.5rem;
+  vertical-align:middle;
 }
 
-.extras-table td.label {
-  width: auto;        /* szerokość = najdłuższa etykieta */
-  white-space: nowrap;/* brak zawijania tekstu */
-  padding-right: 1rem;
+.extras-table td.label{
+  white-space:nowrap;
+  padding-right:1rem;
 }
 
-.extras-table td.input {
-  width: 120px !important;   /* stała, węższa szerokość */
+.extras-table td.input{
+  width:120px !important;
 }
 
-.extras-table tr + tr td {
-  border-top: 1px solid #ccd0d5;
+.extras-table tr + tr td{
+  border-top:1px solid #ccd0d5;
 }
 
-.extras-table td.input input {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-  box-sizing: border-box;
+.extras-table td.input input,
+.extras-table td.input select{
+  width:100%;
+  padding:0.5rem;
+  font-size:1rem;
+  box-sizing:border-box;
 }
 
-/* Powiększone pole select objętości worka */
-.extras-table td.input select {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-  box-sizing: border-box;
-}
-
-/* Helper text pod etykietami dodatków */
-.extras-table td.label small,
-.extras-table td.label .helper-text {
-  display: block;
-  margin-top: 0.25rem;
-  font-size: 0.85rem;
-  color: #555;
-}
-
-/* Klasa .sub mniejsza czcionka */
-.sub {
-  font-size: 0.75rem;
-  color: #555;
+/* Helper text */
+.sub{
+  font-size:0.75rem;
+  color:#555;
 }
 
 /* Przycisk */
-button {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: #007acc;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
+button{
+  width:100%;
+  padding:0.75rem;
+  background-color:#007acc;
+  color:#fff;
+  border:none;
+  border-radius:4px;
+  font-size:1rem;
+  cursor:pointer;
+  transition:background-color 0.2s;
+}
+button:hover{background-color:#005fa3;}
+
+/* Flex zachowanie kontenerów */
+.wrapper > .container{flex:1;}
+.wrapper > .container.extras{
+  flex:3 1 0;
+  max-width:none;
 }
 
-button:hover {
-  background-color: #005fa3;
+/* ---------- DODANE z <STYLE> (przeniesione) ---------- */
+
+/* ukryj środkowy (requirements) */
+.requirements{display:none!important;}
+
+/* sekcje tabeli – brak linii, odstęp */
+.extras-table tr.section td{
+  border-top:none!important;
+  border-bottom:none!important;
+  padding-top:12px;
 }
 
-/* Ustawienie flex dla kontenerów */
-.wrapper > .container {
-  flex: 1;
+/* blok dawkowania przy worku */
+.dosing{
+  display:inline-block;
+  margin-left:8px;
+  font-size:0.9em;
+  vertical-align:middle;
 }
 
-/* Rozszerzenie prawego kontenera (.extras) */
-.wrapper > .container.extras {
-  /* Give extras container dominant share of flex space */
-  flex: 3 1 0; /* grow three‑times faster, shrink normally, zero basis */
-
-  /* Lift the width cap so it can truly expand */
-  max-width: none;
+/* zakresy dodatków */
+.range{
+  font-size:0.9em;
+  color:#555;
+  text-align:left;
+  white-space:nowrap;
 }

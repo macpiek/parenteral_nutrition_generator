@@ -3,40 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <title>Recepta żywienia parenteralnego</title>
-  <!-- ExcelJS (preserves formatting) -->
+
+  <!-- ExcelJS & FileSaver -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
-  <!-- FileSaver do pobierania pliku -->
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-  <!-- Podłączony zewnętrzny styl -->
+
+  <!-- Arkusz stylów -->
   <link rel="stylesheet" href="style.css">
-  <style>
-    /* ukryj środkowy kontener */
-    .requirements{display:none!important;}
-
-    /* usunięcie linii nad i pod wierszami nagłówkowymi sekcji
-       oraz zwiększenie odstępu nad nagłówkiem sekcji */
-    .extras-table tr.section td{border-top:none!important;border-bottom:none!important;padding-top:12px;}
-
-    /* blok dawkowania w jednej linii z selektorem */
-    .dosing{display:inline-block;margin-left:8px;font-size:0.9em;vertical-align:middle;}
-
-  </style>
 </head>
 <body>
   <div class="wrapper">
-    <!-- Lewy kontener: dane pacjenta -->
+
+    <!-- ▼ LEWY KONTENER ▼ -->
     <div class="container">
       <h1>Recepta żywienia parenteralnego</h1>
       <form id="daneForm">
+
         <div class="form-group">
           <label for="fullname">Imię i nazwisko</label>
           <input type="text" id="fullname" value="Jan Kowalski">
         </div>
+
         <div class="form-group">
           <label for="pesel">PESEL</label>
           <input type="text" id="pesel" value="80010112345">
           <hr class="divider">
         </div>
+
         <div class="form-row">
           <div class="form-group">
             <label for="dateFrom">Data od</label>
@@ -47,10 +40,12 @@
             <input type="date" id="dateTo">
           </div>
         </div>
+
         <div class="form-group">
           <label for="weight">Masa ciała (kg)</label>
           <input type="text" id="weight" value="70">
         </div>
+
         <div class="form-row">
           <div class="form-group">
             <label for="productType">Worek</label>
@@ -67,63 +62,114 @@
             </select>
           </div>
         </div>
+
         <div class="form-group">
-          <label for="potassium">Poziom potasu (mmol/L)</label>
+          <label for="potassium">Poziom potasu (mmol / L)</label>
           <input type="text" id="potassium" value="3.5">
         </div>
+
         <button type="submit">Pobierz receptę</button>
       </form>
     </div>
+    <!-- ▲ LEWY KONTENER ▲ -->
 
-    <!-- Środkowy kontener został ukryty -->
-
-    <!-- Prawy kontener: mieszanina -->
+    <!-- ▼ PRAWY KONTENER – mieszanina ▼ -->
     <div class="container extras">
       <h2>Mieszanina</h2>
+
       <table class="extras-table">
-        <!-- wybrany worek -->
+
+        <!-- Worek / dawkowanie / kcal -->
         <tr>
           <td class="label"><strong><span id="selectedBagCell"></span></strong></td>
-          <td class="input">
-            <select id="bagVolume"></select>
-           
-          </td>
+          <td class="input"><select id="bagVolume"></select></td>
           <td class="dosing">
-            <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong>
-            <br>
-            <em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
+            <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong><br>
+            <em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
           </td>
           <td class="calories"><span id="bagCalories"></span> kcal</td>
         </tr>
 
-        <!-- E   L   E   K   T   R   O   L   I   T   Y -->
+        <!-- ── ELEKTROLITY ── -->
         <tr class="section"><td colspan="3"><strong>Elektrolity</strong></td></tr>
-        <tr><td class="label">Glycophos fiol. 20 ml<div class="sub">Fosforan organiczny (glicerofosforan sodowy)</div></td><td class="input"><input type="text" id="add1" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Kalium chlor. 15% amp. 10 ml</td><td class="input"><input type="text" id="add10" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Kalium chlor. 15% amp. 20 ml</td><td class="input"><input type="text" id="add11" placeholder="ml"></td><td></td></tr>
+
+        <tr>
+          <td class="label">Glycophos fiol. 20 ml<div class="sub">Fosforan organiczny (glicerofosforan sodowy)</div></td>
+          <td class="input"><input type="text" id="add1" placeholder="ml"></td><td></td>
+        </tr>
+
+        <tr>
+          <td class="label">Kalium chlor. 15% amp. 10/20 ml</td>
+          <td class="input"><input type="text" id="add10" placeholder="ml"></td><td></td>
+        </tr>
+
         <tr><td class="label">Calcium chloratum 10% amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml"></td><td></td></tr>
         <tr><td class="label">Calcium glubionas 10% amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml"></td><td></td></tr>
         <tr><td class="label">Magnesi sulf. 20% amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">0,9% Natr.Chlor. amp. 10 ml</td><td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Addamel N amp. 10 ml<div class="sub">Pierwiastki śladowe</div></td><td class="input"><input type="text" id="add2" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">0,9 % Natr.Chlor. amp. 10 ml</td><td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td></tr>
+        <tr>
+          <td class="label">Addamel N amp. 10 ml<div class="sub">Pierwiastki śladowe</div></td>
+          <td class="input"><input type="text" id="add2" placeholder="ml"></td><td></td>
+        </tr>
 
-        <!-- W   I   T   A   M   I   N   Y -->
+        <!-- ── WITAMINY ── -->
         <tr class="section"><td colspan="3"><strong>Witaminy</strong></td></tr>
-        <tr><td class="label">Soluvit N fiol.<div class="sub">Witaminy rozpuszczalne w wodzie</div></td><td class="input"><input type="text" id="add3" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Vitalipid N Adult amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td><td class="input"><input type="text" id="add4" placeholder="ml"></td><td></td></tr>
-        <tr style="display:none;"><td class="label">Vitalipid N Infant amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td><td class="input"><input type="text" id="add5" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Vit. B1 50 mg/ml amp. 2 ml</td><td class="input"><input type="text" id="add15" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Vit. C 100 mg/ml amp. 5 ml</td><td class="input"><input type="text" id="add16" placeholder="ml"></td><td></td></tr>
 
-        <!-- S   U   B   S   T   A   N   C   J   E     O   R   G   A   N   I   C   N   E -->
+        <tr>
+          <td class="label">Soluvit N fiol.<div class="sub">Witaminy rozpuszczalne w wodzie</div></td>
+          <td class="input"><input type="text" id="add3" placeholder="ilość fiolek"></td>
+          <td class="range" id="rangeAdd3"></td>
+        </tr>
+
+        <tr>
+          <td class="label">Vitalipid N Adult amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
+          <td class="input"><input type="text" id="add4" placeholder="ml"></td>
+          <td class="range" id="rangeAdd4"></td>
+        </tr>
+
+        <tr style="display:none;">
+          <td class="label">Vitalipid N Infant amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
+          <td class="input"><input type="text" id="add5" placeholder="ml"></td>
+          <td></td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Vit. B1 50 mg/ml amp. 2 ml
+            <div class="sub">Refeeding syndrome, alkoholizm, długie niedożywienie</div>
+          </td>
+          <td class="input"><input type="text" id="add15" placeholder="ml"></td>
+          <td class="range" id="rangeAdd15">0 – 6 ml</td>
+        </tr>
+
+        <tr>
+          <td class="label">
+            Vit. C 100 mg/ml amp. 5 ml
+            <div class="sub">Sepsa, rozległe oparzenia, dializa</div>
+          </td>
+          <td class="input"><input type="text" id="add16" placeholder="ml"></td>
+          <td class="range" id="rangeAdd16">0 – 20 ml (max. 30 ml)</td>
+        </tr>
+
+        <!-- ── SUBSTANCJE ORGANICZNE ── -->
         <tr class="section"><td colspan="3"><strong>Substancje organiczne</strong></td></tr>
-        <tr><td class="label">Dipeptiven but. 50 ml<div class="sub">Związek białkowy</div></td><td class="input"><input type="text" id="add6" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Dipeptiven but. 100 ml<div class="sub">Związek białkowy</div></td><td class="input"><input type="text" id="add7" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Omegaven but. 50 ml<div class="sub">Kwasy omega‑3</div></td><td class="input"><input type="text" id="add8" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Omegaven but. 100 ml<div class="sub">Kwasy omega‑3</div></td><td class="input"><input type="text" id="add9" placeholder="ml"></td><td></td></tr>
+
+        <tr>
+          <td class="label">Dipeptiven but. 50/100 ml<div class="sub">Związek białkowy</div></td>
+          <td class="input"><input type="text" id="add6" placeholder="ml"></td>
+          <td class="range" id="rangeAdd6"></td>
+        </tr>
+
+        <tr>
+          <td class="label">Omegaven but. 50/100 ml<div class="sub">Kwasy omega-3</div></td>
+          <td class="input"><input type="text" id="add8" placeholder="ml"></td>
+          <td class="range" id="rangeAdd8"></td>
+        </tr>
       </table>
-    </div>
-  </div>
+    </div><!-- /extras -->
+    <!-- ▲ PRAWY KONTENER ▲ -->
+  </div><!-- /wrapper -->
+
   <script src="script.js" defer></script>
 </body>
 </html>
