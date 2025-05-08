@@ -18,7 +18,7 @@ body{
   background:#ffffff;
   border-radius:8px;
   box-shadow:0 4px 12px rgba(0,0,0,0.1);
-  max-width:1200px;       /* poszerzone */
+  /* max-width:1200px;       poszerzone */
   width:100%;
   padding:2rem;
 }
@@ -100,6 +100,7 @@ body{
 .extras-table td.label{
   white-space:nowrap;
   padding-right:1rem;
+  width: 1px;    /* tyle, ile potrzebuje zawartość */
 }
 
 .extras-table td.input{
@@ -139,10 +140,15 @@ button{
 button:hover{background-color:#005fa3;}
 
 /* Flex zachowanie kontenerów */
-.wrapper > .container{flex:1;}
+.wrapper > .container
+{
+  flex:1;
+
+}
 .wrapper > .container.extras{
   flex:3 1 0;
-  max-width:none;
+  max-width: none;
+  min-width: 800px;
 }
 
 /* ---------- DODANE z <STYLE> (przeniesione) ---------- */
@@ -156,6 +162,7 @@ button:hover{background-color:#005fa3;}
   border-bottom:none!important;
   padding-top:12px;
 }
+
 
 /* blok dawkowania przy worku */
 .dosing{

@@ -4,17 +4,18 @@
   <meta charset="UTF-8">
   <title>Recepta żywienia parenteralnego</title>
 
-  <!-- ExcelJS & FileSaver -->
+  <!-- ExcelJS (zachowuje formatowanie) -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <!-- FileSaver do pobierania pliku -->
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
-  <!-- Arkusz stylów -->
+  <!-- Główny arkusz stylów -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="wrapper">
 
-    <!-- ▼ LEWY KONTENER ▼ -->
+    <!-- ▼▼ 1. LEWY KONTENER – dane pacjenta ▼▼ -->
     <div class="container">
       <h1>Recepta żywienia parenteralnego</h1>
       <form id="daneForm">
@@ -71,15 +72,15 @@
         <button type="submit">Pobierz receptę</button>
       </form>
     </div>
-    <!-- ▲ LEWY KONTENER ▲ -->
+    <!-- ▲▲ 1. LEWY KONTENER ▲▲ -->
 
-    <!-- ▼ PRAWY KONTENER – mieszanina ▼ -->
+    <!-- ▼▼ 2. PRAWY KONTENER – mieszanina ▼▼ -->
     <div class="container extras">
       <h2>Mieszanina</h2>
 
       <table class="extras-table">
 
-        <!-- Worek / dawkowanie / kcal -->
+        <!-- wybrany worek + dawkowanie + kcal -->
         <tr>
           <td class="label"><strong><span id="selectedBagCell"></span></strong></td>
           <td class="input"><select id="bagVolume"></select></td>
@@ -90,7 +91,7 @@
           <td class="calories"><span id="bagCalories"></span> kcal</td>
         </tr>
 
-        <!-- ── ELEKTROLITY ── -->
+        <!-- ───── ELEKTROLITY ───── -->
         <tr class="section"><td colspan="3"><strong>Elektrolity</strong></td></tr>
 
         <tr>
@@ -98,21 +99,38 @@
           <td class="input"><input type="text" id="add1" placeholder="ml"></td><td></td>
         </tr>
 
+        <!-- zmieniona etykieta KCl -->
         <tr>
-          <td class="label">Kalium chlor. 15% amp. 10/20 ml</td>
+          <td class="label">
+            KCl 15% amp. 10/20 ml
+            <div class="sub">20&nbsp;mmol K<sup>+</sup>/10&nbsp;ml</div>
+          </td>
           <td class="input"><input type="text" id="add10" placeholder="ml"></td><td></td>
         </tr>
 
-        <tr><td class="label">Calcium chloratum 10% amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Calcium glubionas 10% amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Magnesi sulf. 20% amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">0,9 % Natr.Chlor. amp. 10 ml</td><td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Calcium chloratum 10 % amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Magnesi sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml"></td><td></td></tr>
+
+        <!-- zmieniona etykieta NaCl -->
         <tr>
-          <td class="label">Addamel N amp. 10 ml<div class="sub">Pierwiastki śladowe</div></td>
-          <td class="input"><input type="text" id="add2" placeholder="ml"></td><td></td>
+          <td class="label">
+            NaCl 0,9% amp. 10 ml
+            <div class="sub">15,4&nbsp;mmol Na<sup>+</sup>/10&nbsp;ml</div>
+          </td>
+          <td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td>
         </tr>
 
-        <!-- ── WITAMINY ── -->
+        <tr>
+          <td class="label">
+            Addamel N amp. 10 ml
+            <div class="sub">Pierwiastki śladowe, ostrożnie przy cholestazie i&nbsp;PChN</div>
+          </td>
+          <td class="input"><input type="text" id="add2" placeholder="ml"></td>
+          <td class="range" id="rangeAdd2">0 – 10 ml</td>
+        </tr>
+
+        <!-- ───── WITAMINY ───── -->
         <tr class="section"><td colspan="3"><strong>Witaminy</strong></td></tr>
 
         <tr>
@@ -129,8 +147,7 @@
 
         <tr style="display:none;">
           <td class="label">Vitalipid N Infant amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
-          <td class="input"><input type="text" id="add5" placeholder="ml"></td>
-          <td></td>
+          <td class="input"><input type="text" id="add5" placeholder="ml"></td><td></td>
         </tr>
 
         <tr>
@@ -151,7 +168,7 @@
           <td class="range" id="rangeAdd16">0 – 20 ml (max. 30 ml)</td>
         </tr>
 
-        <!-- ── SUBSTANCJE ORGANICZNE ── -->
+        <!-- ───── SUBSTANCJE ORGANICZNE ───── -->
         <tr class="section"><td colspan="3"><strong>Substancje organiczne</strong></td></tr>
 
         <tr>
@@ -167,7 +184,7 @@
         </tr>
       </table>
     </div><!-- /extras -->
-    <!-- ▲ PRAWY KONTENER ▲ -->
+    <!-- ▲▲ 2. PRAWY KONTENER ▲▲ -->
   </div><!-- /wrapper -->
 
   <script src="script.js" defer></script>
