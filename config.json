@@ -1,0 +1,71 @@
+{
+    "bagConfig": {
+      "SmofKabiven": [
+        { "vol": 493,  "kcal": 550  },
+        { "vol": 986,  "kcal": 1100 },
+        { "vol": 1477, "kcal": 1600 },
+        { "vol": 1970, "kcal": 2200 },
+        { "vol": 2463, "kcal": 2700 }
+      ],
+      "SmofKabiven Peripheral": [
+        { "vol": 1206, "kcal": 800  },
+        { "vol": 1448, "kcal": 1000 },
+        { "vol": 1904, "kcal": 1300 }
+      ],
+      "Kabiven": [
+        { "vol": 1026, "kcal": 900  },
+        { "vol": 1540, "kcal": 1400 },
+        { "vol": 2053, "kcal": 1900 },
+        { "vol": 2566, "kcal": 2300 }
+      ],
+      "Kabiven Peripheral": [
+        { "vol": 1440, "kcal": 1000 },
+        { "vol": 1920, "kcal": 1400 },
+        { "vol": 2400, "kcal": 1700 }
+      ]
+    },
+  
+    "additiveRangeConfig": {
+      "Kabiven": {
+        "1026": { "di": [0, 100], "so": [0, 1], "vi": [0, 10], "om": [0, 50]  },
+        "1540": { "di": [0, 200], "so": [0, 1], "vi": [0, 10], "om": [0, 100] },
+        "2053": { "di": [0, 300], "so": [0, 2], "vi": [0, 20], "om": [0, 100] },
+        "2566": { "di": [0, 300], "so": [0, 2], "vi": [0, 20], "om": [0, 100] }
+      },
+      "Kabiven Peripheral": {
+        "1440": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "1920": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "2400": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] }
+      },
+      "SmofKabiven": {
+        "493":  { "di": [0, 100], "so": [0, 1], "vi": [0, 10] },
+        "986":  { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "1477": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "1970": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "2463": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] }
+      },
+      "SmofKabiven Peripheral": {
+        "1206": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "1448": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] },
+        "1904": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] }
+      }
+    },
+  
+    "dosageConfig": {
+      "SmofKabiven":            { "min": 13, "max": 31, "maxDaily": 35 },
+      "Kabiven":                { "min": 19, "max": 38, "maxDaily": 40 },
+      "SmofKabiven Peripheral": { "min": 20, "max": 40, "maxDaily": 40 },
+      "Kabiven Peripheral":     { "min": 27, "max": 40, "maxDaily": 40 }
+    },
+  
+    "constants": {
+      "DIPEPTIVEN_PER_KG": 2.5,
+      "OMEGAVEN_PER_KG":   2.0,
+      "ADDAMEL_RANGE":     "0 – 10 ml",
+      "VIT_B1_RANGE":      "0 – 6 ml",
+      "VIT_C_RANGE":       "0 – 20 ml (max. 30 ml)",
+      "TEMPLATE_FILE":     "szablon.xlsx",
+      "PRINT_RANGE":       "$A$1:$M$56"
+    }
+  }
+  
