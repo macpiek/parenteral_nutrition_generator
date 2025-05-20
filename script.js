@@ -77,6 +77,7 @@
   };
   
   const TEMPLATE_FILE = "szablon.xlsx";
+  const PRINT_RANGE   = "$A$1:$M$56";   
   
   /* =========================================================
      4.  LOGIKA UI
@@ -225,22 +226,6 @@
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(await resp.arrayBuffer());
       const ws = wb.worksheets[0];                 // pierwszy arkusz
-      const sheetIndex = wb.worksheets.indexOf(ws); // 0-based
-  
-      /* ---------- Print_Area widoczne w Calc ---------- */
-      const printRange = '$A$1:$M$56';
-  
-      wb.definedNames.remove('_xlnm.Print_Area');     // usuń stare
-      const sheetRef = ws.name.includes(' ')
-        ? `'${ws.name}'!${printRange}`
-        : `${ws.name}!${printRange}`;
-      wb.definedNames.add('_xlnm.Print_Area', sheetRef, sheetIndex);
-  
-      ws.pageSetup.printArea   = printRange;
-      ws.pageSetup.orientation = 'portrait';
-      ws.pageSetup.fitToPage   = true;
-      ws.pageSetup.fitToWidth  = 1;
-      ws.pageSetup.fitToHeight = 0;
   
       /* nagłówek recepty */
       ws.getCell("C2").value = data.name;
@@ -271,15 +256,53 @@
   
       ws.getCell("D30").value = "";
       ws.getCell("H30").value = solVials || "";
+
+      /* ---------- Print_Area widoczne w Calc ---------- */
+      ws.pageSetup.orientation = 'portrait';
+      ws.pageSetup.fitToPage   = true;
+      ws.pageSetup.fitToWidth  = 1;
+      ws.pageSetup.fitToHeight = 1;
   
       /* zapis pliku */
-      const out = await wb.xlsx.writeBuffer();
-      saveAs(
-        new Blob([out], {
-          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        }),
-        `Recepta_${data.name.replace(/ /g, "_")}.xlsx`
+      /* ---------- zapis do bufora ---------- */
+      const buffer = await wb.xlsx.writeBuffer();
+   
+      /* ---------- modyfikujemy workbook.xml przez JSZip ---------- */
+      const zip = await JSZip.loadAsync(buffer);
+      const wbXmlPath = "xl/workbook.xml";
+      const wbXmlText = await zip.file(wbXmlPath).async("text");
+  
+      /* 1) Usuń WSZYSTKO co jest Print_Area */
+      const clearedXml = wbXmlText.replace(
+        /<definedName[^>]*name="_xlnm\.Print_Area"[\s\S]*?<\/definedName>/g,
+        ""
       );
+  
+      /* 2) Dodaj JEDEN nowy Print_Area */
+      const safeSheetName = ws.name.replace(/'/g, "''"); // escape '
+      const printAreaNode =
+        `<definedName function="false" hidden="false" localSheetId="0" ` +
+        `name="_xlnm.Print_Area" vbProcedure="false">` +
+        `'${safeSheetName}'!${PRINT_RANGE}</definedName>`;
+  
+      const finalXml = clearedXml.includes("<definedNames>")
+        ? clearedXml.replace("</definedNames>", `${printAreaNode}</definedNames>`)
+        : clearedXml.replace("</workbook>", `<definedNames>${printAreaNode}</definedNames></workbook>`);
+  
+      zip.file(wbXmlPath, finalXml);
+  
+      /* ---------- eksportujemy gotowy plik ---------- */
+      const finalBlob = await zip.generateAsync({ type: "blob" });
+      const fileName  = `Recepta_${data.name.replace(/\s+/g, "_")}.xlsx`;
+      saveAs(finalBlob, fileName);
     });
   });
   
+      
+      
+      
+      
+      
+      
+      
+      
