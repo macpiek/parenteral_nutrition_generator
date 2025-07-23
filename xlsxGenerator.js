@@ -87,7 +87,9 @@ async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
   
       /* 9. Eksport pliku */
       const finalBlob = await zip.generateAsync({ type: "blob" });
-      const fileName  = `Recepta_${data.name.replace(/\s+/g, "_")}.xlsx`;
+      const bagLabel   = currentBag.replace(" Peripheral", "");
+      const routeLabel = central ? "centralne" : "obwodowe";
+      const fileName   = `${data.name} ${bagLabel} ${routeLabel}.xlsx`;
       saveAs(finalBlob, fileName);
     } catch (err) {
       console.error(err);
