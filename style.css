@@ -179,3 +179,10 @@ button:hover{background-color:#005fa3;}
   text-align:left;
   white-space:nowrap;
 }
+
+/* podsumowanie elektrolitów */
+.electrolyte-summary{
+  margin-top:1rem;
+  text-align:right;
+  font-weight:bold;
+}
