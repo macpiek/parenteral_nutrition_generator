@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const weightInp  = $("weight");
   const volSel     = $("bagVolume");
 
+  const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
+
   const kcalSpan = $("bagCalories");
   const bagCell  = $("selectedBagCell");
   const reqMin   = $("reqMin");
@@ -68,11 +70,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const bag = currentBag();
     const vol = parseInt(volSel.value, 10);
     const cfgRange = additiveRangeConfig[bag]?.[vol];
-    const w = parseFloat(weightInp.value) || 0;
+    const w = parseNum(weightInp.value) || 0;
 
     const diMax = Math.min(
       cfgRange?.di ? cfgRange.di[1] : Infinity,
-      w ? Math.round(DIPEPTIVEN_PER_KG * w) : Infinity
+        w ? Math.round(DIPEPTIVEN_PER_KG * w) : Infinity
     );
     rangeDi.textContent = diMax === Infinity ? "Brak danych" : `0 – ${diMax} ml`;
 
@@ -117,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const updateDosage = () => {
     const cfgDose = dosageConfig[currentBag()];
-    const w = parseFloat(weightInp.value) || 0;
+    const w = parseNum(weightInp.value) || 0;
     if (cfgDose && w) {
       reqMin.textContent = Math.round(cfgDose.min * w);
       reqMax.textContent = Math.round(cfgDose.max * w);
@@ -154,7 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       pesel    : $("pesel").value.trim(),
       dateFrom : $("dateFrom").value,
       dateTo   : $("dateTo").value,
-      weight   : parseFloat(weightInp.value) || 0,
+      weight   : parseNum(weightInp.value) || 0,
       bagVol   : parseInt(volSel.value, 10) || 0,
       additives: Array.from({ length: 17 }, (_, i) => getAdd(i + 1))
     };
