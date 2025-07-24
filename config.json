@@ -50,7 +50,14 @@
         "1904": { "di": [0, 300], "so": [0, 1], "vi": [0, 10] }
       }
     },
-  
+
+    "additiveDefaultConfig": {
+      "SmofKabiven":            { "Vitalipid N Adult": 10, "Soluvit N": 1 },
+      "Kabiven":                { "Vitalipid N Adult": 10, "Soluvit N": 1 },
+      "SmofKabiven Peripheral": { "Vitalipid N Adult": 10, "Soluvit N": 1 },
+      "Kabiven Peripheral":     { "Vitalipid N Adult": 10, "Soluvit N": 1 }
+    },
+
     "dosageConfig": {
       "SmofKabiven":            { "min": 13, "max": 31, "maxDaily": 35 },
       "Kabiven":                { "min": 19, "max": 38, "maxDaily": 40 },
