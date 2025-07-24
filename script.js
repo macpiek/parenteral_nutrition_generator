@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const {
     bagConfig,
     additiveRangeConfig,
+    additiveDefaultConfig,
     dosageConfig,
     constants: {
       DIPEPTIVEN_PER_KG,
@@ -51,6 +52,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   const rangeAd  = $("rangeAdd2");
   const rangeVb1 = $("rangeAdd15");
   const rangeVc  = $("rangeAdd16");
+
+  const additiveInputs = {
+    "Soluvit N": $("add3"),
+    "Vitalipid N Adult": $("add4"),
+    "Addamel N": $("add2"),
+    "Vit. B1": $("add15"),
+    "Vit. C": $("add16")
+  };
+
+  const manualAdditives = new Set();
+
+  for (const el of Object.values(additiveInputs)) {
+    if (el) {
+      el.addEventListener("input", () => manualAdditives.add(el.id));
+    }
+  }
 
   /* ---------- 3. Inicjalizacja dat ---------- */
   const today = new Date().toISOString().slice(0, 10);
@@ -93,6 +110,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     rangeVc.textContent  = VIT_C_RANGE;
   }
 
+  function applyDefaultAdditives () {
+    const defaults = additiveDefaultConfig[currentBag()];
+    if (!defaults) return;
+    for (const [name, val] of Object.entries(defaults)) {
+      const el = additiveInputs[name];
+      if (el && !manualAdditives.has(el.id)) el.value = val;
+    }
+  }
+
   /* --- worki & kcal --- */
   function renderBagOptions () {
     const bag = currentBag();
@@ -110,6 +136,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateKcal();
     updateDosage();
     updateAdditiveRanges();
+    applyDefaultAdditives();
   }
 
   const updateKcal = () =>
