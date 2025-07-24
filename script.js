@@ -161,7 +161,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       additives: Array.from({ length: 17 }, (_, i) => getAdd(i + 1))
     };
 
-    /* podział objętości 50/100 i 10/20 (Dipeptiven, Omegaven, KCl) */
+    /* helper dzielący wpisaną ilość na małe i duże opakowania
+       (np. 50/100 ml czy 10/20 ml) wykorzystywane w arkuszu */
     const split = (iS, iL, size) => {
       const total = parseFloat(data.additives[iS]) || 0;
       const large = Math.floor(total / size) * size;
