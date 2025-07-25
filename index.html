@@ -75,26 +75,28 @@
 
         <!-- wybrany worek + dawkowanie + kcal -->
         <tr>
-          <td class="label">
-            <div class="form-group">
-              <label for="productType">Worek</label>
-              <select id="productType">
-                <option value="SmofKabiven">SmofKabiven</option>
-                <option value="Kabiven">Kabiven</option>
-              </select>
+          <td class="label" colspan="3">
+            <div class="form-row bag-select-row">
+              <div class="form-group">
+                <select id="productType">
+                  <option value="SmofKabiven">SmofKabiven</option>
+                  <option value="Kabiven">Kabiven</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <select id="nutritionType">
+                  <option value="obwodowe" selected>Obwodowe</option>
+                  <option value="centralne">Centralne</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <select id="bagVolume"></select>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="nutritionType">Rodzaj żywienia</label>
-              <select id="nutritionType">
-                <option value="obwodowe" selected>Obwodowe</option>
-                <option value="centralne">Centralne</option>
-              </select>
+            <div class="dosing">
+              <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong>
+              &nbsp;<em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
             </div>
-          </td>
-          <td class="input"><select id="bagVolume"></select></td>
-          <td class="dosing">
-            <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong><br>
-            <em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
           </td>
         </tr>
 
