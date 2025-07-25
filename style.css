@@ -186,7 +186,8 @@ button:hover{background-color:#005fa3;}
 
 /* tabela parametrów mieszaniny */
 .mix-params-table{
-  width:100%;
+  width:auto;
+  max-width:25rem;
   border-collapse:collapse;
   margin-top:1rem;
 }
