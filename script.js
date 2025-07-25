@@ -42,7 +42,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
 
   const kcalSpan = $("bagCalories");
-  const bagCell  = $("selectedBagCell");
   const reqMin   = $("reqMin");
   const reqMax   = $("reqMax");
   const reqAbs   = $("reqAbsMax");
@@ -152,7 +151,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* --- worki & kcal --- */
   function renderBagOptions () {
     const bag = currentBag();
-    bagCell.textContent = bag;
 
     volSel.innerHTML = "";
     (bagConfig[bag] || []).forEach(({ vol, kcal }) => {
