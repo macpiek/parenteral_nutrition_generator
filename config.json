@@ -24,6 +24,14 @@
         { "vol": 2400, "kcal": 1700 }
       ]
     },
+    "electrolyteConfig": {
+      "Kabiven Peripheral": {
+        "1440": { "Na": 32, "K": 24, "NaMax": 216, "KMax": 216 },
+        "1920": { "Na": 43, "K": 32, "NaMax": 288, "KMax": 288 },
+        "2400": { "Na": 53, "K": 40, "NaMax": 360, "KMax": 360 }
+      }
+    },
+
   
     "additiveRangeConfig": {
       "Kabiven": {

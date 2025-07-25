@@ -55,6 +55,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const rangeVb1 = $("rangeAdd15");
   const rangeVc  = $("rangeAdd16");
 
+  const naTotal = $("naTotal");
+  const naMaxSpan = $("naMax");
+  const kTotal = $("kTotal");
+  const kMaxSpan = $("kMax");
+
   const additiveInputs = {
     "Soluvit N": $("add3"),
     "Vitalipid N Adult": $("add4"),
@@ -70,6 +75,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       el.addEventListener("input", () => manualAdditives.add(el.id));
     }
   }
+
+  ["add10", "add17"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("input", updateElectrolyteSummary);
+  });
 
   /* ---------- 3. Inicjalizacja dat ---------- */
   const today = new Date().toISOString().slice(0, 10);
@@ -119,6 +129,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       const el = additiveInputs[name];
       if (el && !manualAdditives.has(el.id)) el.value = val;
     }
+    updateElectrolyteSummary();
+  }
+
+  /* --- podsumowanie Na i K --- */
+  function updateElectrolyteSummary () {
+    const bag = currentBag();
+    const vol = parseInt(volSel.value, 10);
+    const eCfg = cfg.electrolyteConfig?.[bag]?.[vol] || {};
+    let na = eCfg.Na || 0;
+    let k  = eCfg.K  || 0;
+    const addNa = parseNum($("add17").value) || 0; // NaCl
+    const addK  = parseNum($("add10").value) || 0; // KCl
+    na += addNa * 1.54;
+    k  += addK  * 2;
+    naTotal.textContent = Math.round(na);
+    kTotal.textContent  = Math.round(k);
+    naMaxSpan.textContent = eCfg.NaMax || 0;
+    kMaxSpan.textContent  = eCfg.KMax || 0;
   }
 
   /* --- worki & kcal --- */
@@ -139,6 +167,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateDosage();
     updateAdditiveRanges();
     applyDefaultAdditives();
+    updateElectrolyteSummary();
   }
 
   const updateKcal = () =>
@@ -159,10 +188,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* --- eventy UI --- */
   productSel.addEventListener("change", renderBagOptions);
   nutritSel .addEventListener("change", renderBagOptions);
-  volSel    .addEventListener("change", () => { updateKcal(); updateAdditiveRanges(); });
+  volSel    .addEventListener("change", () => {
+    updateKcal();
+    updateAdditiveRanges();
+    updateElectrolyteSummary();
+  });
   weightInp .addEventListener("input",  () => { updateDosage(); updateAdditiveRanges(); });
 
   renderBagOptions();          // początkowe
+  updateElectrolyteSummary();
 
   /* ---------- 5. Submit = przygotuj dane i wywołaj generator ---------- */
   $("daneForm").addEventListener("submit", async (e) => {
