@@ -25,10 +25,28 @@
       ]
     },
     "electrolyteConfig": {
+      "Kabiven": {
+        "1026": { "Na": 32, "K": 24, "NaMax": 154, "KMax": 154 },
+        "1540": { "Na": 48, "K": 36, "NaMax": 231, "KMax": 231 },
+        "2053": { "Na": 64, "K": 48, "NaMax": 308, "KMax": 308 },
+        "2566": { "Na": 80, "K": 60, "NaMax": 385, "KMax": 385 }
+      },
       "Kabiven Peripheral": {
         "1440": { "Na": 32, "K": 24, "NaMax": 216, "KMax": 216 },
         "1920": { "Na": 43, "K": 32, "NaMax": 288, "KMax": 288 },
         "2400": { "Na": 53, "K": 40, "NaMax": 360, "KMax": 360 }
+      },
+      "SmofKabiven": {
+        "493":  { "Na": 20,  "K": 15, "NaMax": 74,  "KMax": 74  },
+        "986":  { "Na": 40,  "K": 30, "NaMax": 148, "KMax": 148 },
+        "1477": { "Na": 60,  "K": 45, "NaMax": 222, "KMax": 222 },
+        "1970": { "Na": 80,  "K": 60, "NaMax": 296, "KMax": 296 },
+        "2463": { "Na": 100, "K": 74, "NaMax": 369, "KMax": 369 }
+      },
+      "SmofKabiven Peripheral": {
+        "1206": { "Na": 30, "K": 23, "NaMax": 181, "KMax": 181 },
+        "1448": { "Na": 36, "K": 28, "NaMax": 217, "KMax": 217 },
+        "1904": { "Na": 48, "K": 36, "NaMax": 286, "KMax": 286 }
       }
     },
 
