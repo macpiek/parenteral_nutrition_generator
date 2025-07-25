@@ -206,3 +206,13 @@ button:hover{background-color:#005fa3;}
 .mix-params-table td:nth-child(3){
   text-align:right;
 }
+
+/* work type and nutrition selects side by side */
+.bag-select-row{
+  display:flex;
+  gap:1rem;
+}
+.bag-select-row .form-group{
+  flex:1;
+  margin-bottom:0;
+}
