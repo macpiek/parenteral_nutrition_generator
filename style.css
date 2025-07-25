@@ -106,6 +106,9 @@ body{
   padding-right:1rem;
   width: 1px;    /* tyle, ile potrzebuje zawartość */
 }
+.extras-table td.label .form-group{
+  margin-bottom:0.5rem;
+}
 
 .extras-table td.input{
   width:120px !important;
