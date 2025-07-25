@@ -173,10 +173,14 @@ button:hover{background-color:#005fa3;}
 
 /* blok dawkowania przy worku */
 .dosing{
-  display:inline-block;
-  margin-left:8px;
+  margin-top:0.5rem;
   font-size:0.9em;
-  vertical-align:middle;
+}
+
+/* wyróżniony wybór worka */
+#productType{
+  font-size:1.2rem;
+  font-weight:bold;
 }
 
 /* zakresy dodatków */
