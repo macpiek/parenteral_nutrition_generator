@@ -92,7 +92,6 @@
             <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong><br>
             <em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
           </td>
-          <td class="calories"><span id="bagCalories"></span> kcal</td>
         </tr>
 
         <!-- ───── ELEKTROLITY ───── -->
@@ -187,12 +186,34 @@
           <td class="range" id="rangeAdd8"></td>
         </tr>
       </table>
-      <p class="electrolyte-summary">
-        <strong>Sód:</strong> <span id="naTotal">0</span> mmol/
-        <span id="naMax">0</span> mmol,
-        <strong>Potas:</strong> <span id="kTotal">0</span> mmol/
-        <span id="kMax">0</span> mmol
-      </p>
+
+      <h3 class="mix-params-heading">Parametry mieszaniny</h3>
+      <table class="mix-params-table">
+        <thead>
+          <tr>
+            <th>Parametr</th>
+            <th>W mieszaninie</th>
+            <th>Maks. w worku</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kalorie</td>
+            <td><span id="bagCalories"></span> kcal</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Sód</td>
+            <td><span id="naTotal">0</span> mmol</td>
+            <td><span id="naMax">0</span> mmol</td>
+          </tr>
+          <tr>
+            <td>Potas</td>
+            <td><span id="kTotal">0</span> mmol</td>
+            <td><span id="kMax">0</span> mmol</td>
+          </tr>
+        </tbody>
+      </table>
     </div><!-- /extras -->
     <!-- ▲▲ 2. PRAWY KONTENER ▲▲ -->
   </div><!-- /wrapper -->
