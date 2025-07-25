@@ -31,6 +31,10 @@ body{
   font-size:1.5rem;
 }
 
+.mix-params-heading{
+  margin:2rem 0 1rem;
+}
+
 /* Divider pod PESEL */
 .divider{
   border:none;
@@ -180,9 +184,21 @@ button:hover{background-color:#005fa3;}
   white-space:nowrap;
 }
 
-/* podsumowanie elektrolitów */
-.electrolyte-summary{
+/* tabela parametrów mieszaniny */
+.mix-params-table{
+  width:100%;
+  border-collapse:collapse;
   margin-top:1rem;
+}
+.mix-params-table th,
+.mix-params-table td{
+  padding:0.25rem 0.5rem;
+}
+.mix-params-table th{
+  text-align:left;
+  background:#f0f4f8;
+}
+.mix-params-table td:nth-child(2),
+.mix-params-table td:nth-child(3){
   text-align:right;
-  font-weight:bold;
 }
