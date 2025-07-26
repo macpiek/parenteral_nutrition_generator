@@ -71,6 +71,21 @@ body{
   outline:none;
 }
 
+/* Jednolinijkowe pola (np. masa ciała, Na, K) */
+.form-group.inline{
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+.form-group.inline label{
+  margin-bottom:0;
+  white-space:nowrap;
+}
+.form-group.inline input{
+  width:6rem;
+  flex:0 0 auto;
+}
+
 /* Flexbox wrapper dla kontenerów */
 .wrapper{
   display:flex;
@@ -112,7 +127,7 @@ body{
 }
 
 .extras-table td.input{
-  width:120px !important;
+  width:80px !important;
 }
 
 .extras-table tr + tr td{
@@ -152,12 +167,12 @@ button:hover{background-color:#005fa3;}
 .wrapper > .container{
   flex:0 0 auto;
   width:auto;
-  max-width:22rem;
+  max-width:18rem;
 }
 .wrapper > .container.extras{
   flex:1 1 0;
   max-width:none;
-  min-width:600px;
+  min-width:650px;
   width:auto;
 }
 .wrapper > .container.mix-params{
