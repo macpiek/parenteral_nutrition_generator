@@ -45,6 +45,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const reqMin   = $("reqMin");
   const reqMax   = $("reqMax");
   const reqAbs   = $("reqAbsMax");
+  const calReqMin = $("calReqMin");
+  const calReqMax = $("calReqMax");
 
   const rangeDi  = $("rangeAdd6");
   const rangeSo  = $("rangeAdd3");
@@ -174,6 +176,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const updateDosage = () => {
     const cfgDose = dosageConfig[currentBag()];
     const w = parseNum(weightInp.value) || 0;
+    if (w) {
+      calReqMin.textContent = Math.round(25 * w);
+      calReqMax.textContent = Math.round(35 * w);
+    } else {
+      calReqMin.textContent = calReqMax.textContent = "0";
+    }
+
     if (cfgDose && w) {
       reqMin.textContent = Math.round(cfgDose.min * w);
       reqMax.textContent = Math.round(cfgDose.max * w);
@@ -188,6 +197,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   nutritSel .addEventListener("change", renderBagOptions);
   volSel    .addEventListener("change", () => {
     updateKcal();
+    updateDosage();
     updateAdditiveRanges();
     updateElectrolyteSummary();
   });
