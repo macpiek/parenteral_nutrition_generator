@@ -87,6 +87,12 @@ body{
   width:5rem;
   flex:0 0 auto;
 }
+
+#weight,
+#sodium,
+#potassium {
+  width:4rem;
+}
 .form-group.inline .unit{
   margin-left:0.25rem;
   white-space:nowrap;
