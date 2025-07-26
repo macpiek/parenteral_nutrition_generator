@@ -82,7 +82,7 @@ body{
   white-space:nowrap;
 }
 .form-group.inline input{
-  width:6rem;
+  width:5rem;
   flex:0 0 auto;
 }
 
@@ -172,11 +172,11 @@ button:hover{background-color:#005fa3;}
 .wrapper > .container.extras{
   flex:1 1 0;
   max-width:none;
-  min-width:650px;
+  min-width:600px;
   width:auto;
 }
 .wrapper > .container.mix-params{
-  max-width:26rem;
+  max-width:30rem;
 }
 
 /* ---------- DODANE z <STYLE> (przeniesione) ---------- */
@@ -220,7 +220,7 @@ button:hover{background-color:#005fa3;}
 /* tabela parametrów mieszaniny */
 .mix-params-table{
   width:auto;
-  max-width:25rem;
+  max-width:28rem;
   border-collapse:collapse;
   margin-top:1rem;
 }
