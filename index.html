@@ -45,19 +45,22 @@
         </div>
 
         <div class="form-group inline">
-          <label for="weight">Masa ciała (kg)</label>
+          <label for="weight">Masa ciała</label>
           <input type="text" id="weight" value="70">
+          <span class="unit">kg</span>
         </div>
 
 
         <div class="form-group inline">
-          <label for="sodium">Sód (mmol / L)</label>
+          <label for="sodium">Sód</label>
           <input type="text" id="sodium" value="140">
+          <span class="unit">mmol/L</span>
         </div>
 
         <div class="form-group inline">
-          <label for="potassium">Potas (mmol / L)</label>
+          <label for="potassium">Potas</label>
           <input type="text" id="potassium" value="3.5">
+          <span class="unit">mmol/L</span>
         </div>
 
       </form>
@@ -200,7 +203,7 @@
             <th>Parametr</th>
             <th>W mieszaninie</th>
             <th>Maks. w worku</th>
-            <th>Zapotrzebowanie</th>
+            <th>Zapotrzebowanie dobowe</th>
           </tr>
         </thead>
         <tbody>
@@ -208,19 +211,19 @@
             <td>Kalorie</td>
             <td><span id="bagCalories"></span> kcal</td>
             <td>&ndash;</td>
-            <td><span id="calReqMin">0</span> - <span id="calReqMax">0</span> kcal/dobę</td>
+            <td><span id="calReqMin">0</span> - <span id="calReqMax">0</span> kcal</td>
           </tr>
           <tr>
             <td>Sód</td>
             <td><span id="naTotal">0</span> mmol</td>
             <td><span id="naMax">0</span> mmol</td>
-            <td></td>
+            <td><span id="naReqMin">0</span> - <span id="naReqMax">0</span> mmol</td>
           </tr>
           <tr>
             <td>Potas</td>
             <td><span id="kTotal">0</span> mmol</td>
             <td><span id="kMax">0</span> mmol</td>
-            <td></td>
+            <td><span id="kReqMin">0</span> - <span id="kReqMax">0</span> mmol</td>
           </tr>
         </tbody>
       </table>
