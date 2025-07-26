@@ -80,6 +80,8 @@ body{
 .form-group.inline label{
   margin-bottom:0;
   white-space:nowrap;
+  width:6rem;
+  flex:0 0 6rem;
 }
 .form-group.inline input{
   width:5rem;
@@ -227,6 +229,7 @@ button:hover{background-color:#005fa3;}
   max-width:28rem;
   border-collapse:collapse;
   margin-top:1rem;
+  border:1px solid #ccd0d5;
 }
 .mix-params-table th,
 .mix-params-table td{
