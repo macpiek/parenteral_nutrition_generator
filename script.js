@@ -60,6 +60,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const naMaxSpan = $("naMax");
   const kTotal = $("kTotal");
   const kMaxSpan = $("kMax");
+  const naReqMin = $("naReqMin");
+  const naReqMax = $("naReqMax");
+  const kReqMin  = $("kReqMin");
+  const kReqMax  = $("kReqMax");
 
   const additiveInputs = {
     "Soluvit N": $("add3"),
@@ -179,8 +183,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (w) {
       calReqMin.textContent = Math.round(25 * w);
       calReqMax.textContent = Math.round(35 * w);
+      naReqMin.textContent = Math.round(0.5 * w);
+      naReqMax.textContent = Math.round(2 * w);
+      kReqMin.textContent  = Math.round(0.5 * w);
+      kReqMax.textContent  = Math.round(2 * w);
     } else {
       calReqMin.textContent = calReqMax.textContent = "0";
+      naReqMin.textContent = naReqMax.textContent = "0";
+      kReqMin.textContent  = kReqMax.textContent  = "0";
     }
 
     if (cfgDose && w) {

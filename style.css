@@ -85,6 +85,10 @@ body{
   width:5rem;
   flex:0 0 auto;
 }
+.form-group.inline .unit{
+  margin-left:0.25rem;
+  white-space:nowrap;
+}
 
 /* Flexbox wrapper dla kontenerów */
 .wrapper{
