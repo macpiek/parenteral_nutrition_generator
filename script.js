@@ -184,8 +184,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   const updateKcal = () => {
-    const bag = parseFloat(volSel.selectedOptions[0]?.dataset.kcal) || 0;
-    let total = bag;
+    const vol = parseInt(volSel.value, 10);
+    const bagInfo = (bagConfig[currentBag()] || []).find(b => b.vol === vol);
+    const bagKcal = bagInfo ? bagInfo.kcal : parseFloat(volSel.selectedOptions[0]?.dataset.kcal) || 0;
+    let total = bagKcal;
     for (const [id, perMl] of Object.entries(additiveKcalPerMl)) {
       const el = $(id);
       if (el) total += (parseNum(el.value) || 0) * perMl;
