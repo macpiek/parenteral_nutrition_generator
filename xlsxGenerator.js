@@ -45,15 +45,7 @@ async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
       const tr = rowMap[currentBag];
       if (tr) {
         const info = (bagConfig[currentBag] || []).find(b => b.vol === data.bagVol);
-        const bagKcal = info ? info.kcal : 0;
-        const addKcalMap = { add6: 0.8, add8: 1.12 };
-        let totalKcal = bagKcal;
-        for (const [id, perMl] of Object.entries(addKcalMap)) {
-          const idx = parseInt(id.slice(3), 10) - 1;
-          const vol = parseFloat(data.additives[idx]) || 0;
-          totalKcal += vol * perMl;
-        }
-        ws.getCell(`C${tr}`).value = Math.round(totalKcal);
+        ws.getCell(`C${tr}`).value = info ? info.kcal : "";
         ws.getCell(`D${tr}`).value = data.bagVol;
       }
   
