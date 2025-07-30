@@ -42,6 +42,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
 
   const kcalSpan = $("bagCalories");
+  const additiveKcalPerMl = {
+    add6: 0.8,   // Dipeptiven: 80 kcal/100 ml
+    add8: 1.12   // Omegaven: 112 kcal/100 ml
+  };
   const reqMin   = $("reqMin");
   const reqMax   = $("reqMax");
   const reqAbs   = $("reqAbsMax");
@@ -84,6 +88,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   ["add10", "add17"].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener("input", updateElectrolyteSummary);
+  });
+
+  ["add6", "add8"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("input", updateKcal);
   });
 
   /* ---------- 3. Inicjalizacja dat ---------- */
@@ -174,8 +183,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateElectrolyteSummary();
   }
 
-  const updateKcal = () =>
-    kcalSpan.textContent = volSel.selectedOptions[0]?.dataset.kcal || "";
+  const updateKcal = () => {
+    const bag = parseFloat(volSel.selectedOptions[0]?.dataset.kcal) || 0;
+    let total = bag;
+    for (const [id, perMl] of Object.entries(additiveKcalPerMl)) {
+      const el = $(id);
+      if (el) total += (parseNum(el.value) || 0) * perMl;
+    }
+    kcalSpan.textContent = total ? Math.round(total) : "";
+  };
 
   const updateDosage = () => {
     const cfgDose = dosageConfig[currentBag()];
