@@ -139,7 +139,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
       rangeOm.textContent = `0 – ${omMax} ml`;
     } else {
-      rangeOm.textContent = "Brak danych";
+      const omMax = w ? Math.round(OMEGAVEN_PER_KG * w) : Infinity;
+      rangeOm.textContent = omMax === Infinity ? "Brak danych" : `0 – ${omMax} ml`;
     }
 
     rangeAd.textContent  = ADDAMEL_RANGE;
