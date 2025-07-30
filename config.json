@@ -50,7 +50,7 @@
       }
     },
 
-  
+
     "additiveRangeConfig": {
       "Kabiven": {
         "1026": { "di": [0, 100], "so": [0, 1], "vi": [0, 10], "om": [0, 50]  },
@@ -114,7 +114,7 @@
       "SmofKabiven Peripheral": { "min": 20, "max": 40, "maxDaily": 40 },
       "Kabiven Peripheral":     { "min": 27, "max": 40, "maxDaily": 40 }
     },
-  
+
     "constants": {
       "DIPEPTIVEN_PER_KG": 2.5,
       "OMEGAVEN_PER_KG":   2.0,
