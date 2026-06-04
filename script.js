@@ -37,7 +37,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const nutritSel  = $("nutritionType");
   const weightInp  = $("weight");
   const volSel     = $("bagVolume");
-  const importInp  = $("recipeImport");
 
   const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
 
@@ -54,13 +53,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const rangeAd  = $("rangeAdd2");
   const rangeVb1 = $("rangeAdd15");
   const rangeVc  = $("rangeAdd16");
-
-  const worksheetBagRows = {
-    "Kabiven": 23,
-    "SmofKabiven": 24,
-    "Kabiven Peripheral": 25,
-    "SmofKabiven Peripheral": 26
-  };
 
   /* ---------- 3. Inicjalizacja dat ---------- */
   const today = new Date().toISOString().slice(0, 10);
@@ -137,148 +129,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
-  const unwrapCellValue = value => {
-    if (value == null) return "";
-    if (value instanceof Date) return value;
-    if (typeof value !== "object") return value;
-    if ("result" in value) return unwrapCellValue(value.result);
-    if ("text" in value) return value.text;
-    if (Array.isArray(value.richText)) {
-      return value.richText.map(part => part.text || "").join("");
-    }
-    return String(value);
-  };
-
-  const getWorksheetValue = (ws, address) => unwrapCellValue(ws.getCell(address).value);
-
-  const formatImportedValue = value => {
-    const unwrapped = unwrapCellValue(value);
-    if (unwrapped === "") return "";
-    if (typeof unwrapped === "number") return String(unwrapped);
-    return String(unwrapped);
-  };
-
-  const toNumber = value => {
-    const unwrapped = unwrapCellValue(value);
-    if (unwrapped === "") return 0;
-    const parsed = parseNum(unwrapped);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  const sumWorksheetCells = (ws, addresses) => {
-    const total = addresses.reduce((sum, address) => sum + toNumber(getWorksheetValue(ws, address)), 0);
-    return total ? formatImportedValue(total) : "";
-  };
-
-  const formatDateForInput = value => {
-    const unwrapped = unwrapCellValue(value);
-    if (!unwrapped) return "";
-
-    if (unwrapped instanceof Date) {
-      return unwrapped.toISOString().slice(0, 10);
-    }
-
-    if (typeof unwrapped === "number") {
-      const excelEpoch = Date.UTC(1899, 11, 30);
-      return new Date(excelEpoch + unwrapped * 86400000).toISOString().slice(0, 10);
-    }
-
-    const text = String(unwrapped).trim();
-    const isoMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (isoMatch) return isoMatch[0];
-
-    const polishMatch = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-    if (polishMatch) {
-      const [, day, month, year] = polishMatch;
-      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-    }
-
-    return text;
-  };
-
-  const setInputValue = (id, value) => {
-    const el = $(id);
-    if (el) el.value = formatImportedValue(value);
-  };
-
-  const importAdditivesFromWorksheet = ws => {
-    setInputValue("add1", getWorksheetValue(ws, "D28"));
-    setInputValue("add2", getWorksheetValue(ws, "D29"));
-    setInputValue("add3", getWorksheetValue(ws, "H30") || getWorksheetValue(ws, "D30"));
-    setInputValue("add4", getWorksheetValue(ws, "D31"));
-    setInputValue("add5", getWorksheetValue(ws, "D32"));
-    setInputValue("add6", sumWorksheetCells(ws, ["D33", "D34"]));
-    setInputValue("add8", sumWorksheetCells(ws, ["D35", "D36"]));
-    setInputValue("add10", sumWorksheetCells(ws, ["D37", "D38"]));
-    setInputValue("add12", getWorksheetValue(ws, "D39"));
-    setInputValue("add13", getWorksheetValue(ws, "D40"));
-    setInputValue("add14", getWorksheetValue(ws, "D41"));
-    setInputValue("add15", getWorksheetValue(ws, "D42"));
-    setInputValue("add16", getWorksheetValue(ws, "D43"));
-    setInputValue("add17", getWorksheetValue(ws, "D44"));
-  };
-
-  const detectImportedBag = ws => {
-    return Object.entries(worksheetBagRows).find(([, row]) => {
-      const vol = toNumber(getWorksheetValue(ws, `D${row}`));
-      const kcal = toNumber(getWorksheetValue(ws, `C${row}`));
-      return vol || kcal;
-    })?.[0] || "";
-  };
-
-  async function importRecipeFromFile (file) {
-    try {
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.load(await file.arrayBuffer());
-      const ws = wb.worksheets[0];
-      if (!ws) throw new Error("Brak arkusza w pliku XLSX.");
-
-      setInputValue("fullname", getWorksheetValue(ws, "C2"));
-      setInputValue("pesel", getWorksheetValue(ws, "C6"));
-      setInputValue("weight", getWorksheetValue(ws, "C7"));
-      $("dateFrom").value = formatDateForInput(getWorksheetValue(ws, "C8"));
-      $("dateTo").value = formatDateForInput(getWorksheetValue(ws, "C9"));
-
-      const importedBag = detectImportedBag(ws);
-      if (importedBag) {
-        productSel.value = importedBag.replace(" Peripheral", "");
-        nutritSel.value = importedBag.includes("Peripheral") ? "obwodowe" : "centralne";
-      } else {
-        const centralCell = String(getWorksheetValue(ws, "C12")).toLowerCase();
-        nutritSel.value = centralCell.includes("x") ? "centralne" : "obwodowe";
-      }
-
-      renderBagOptions();
-
-      if (importedBag) {
-        const importedVolume = toNumber(getWorksheetValue(ws, `D${worksheetBagRows[importedBag]}`));
-        if (importedVolume) {
-          volSel.value = String(importedVolume);
-        }
-      }
-
-      importAdditivesFromWorksheet(ws);
-      updateKcal();
-      updateDosage();
-      updateAdditiveRanges();
-
-      alert("Poprzednia recepta została wczytana.");
-    } catch (err) {
-      console.error(err);
-      alert("Nie udało się wczytać recepty. Wybierz plik XLSX wygenerowany przez ten program.");
-    }
-  }
-
   /* --- eventy UI --- */
   productSel.addEventListener("change", renderBagOptions);
   nutritSel .addEventListener("change", renderBagOptions);
   volSel    .addEventListener("change", () => { updateKcal(); updateAdditiveRanges(); });
   weightInp .addEventListener("input",  () => { updateDosage(); updateAdditiveRanges(); });
-  importInp .addEventListener("change", async () => {
-    const [file] = importInp.files;
-    if (file) await importRecipeFromFile(file);
-    importInp.value = "";
-  });
 
   renderBagOptions();          // początkowe
 

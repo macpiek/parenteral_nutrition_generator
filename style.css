@@ -139,23 +139,6 @@ button{
 }
 button:hover{background-color:#005fa3;}
 
-.import-recipe{
-  border:1px dashed #9ab7d1;
-  border-radius:4px;
-  padding:0.75rem;
-  background:#f7fbff;
-}
-
-.import-recipe input[type="file"]{
-  border:none;
-  padding:0;
-  background:transparent;
-}
-
-.import-recipe .sub{
-  margin-top:0.5rem;
-}
-
 /* Flex zachowanie kontenerów */
 .wrapper > .container
 {
