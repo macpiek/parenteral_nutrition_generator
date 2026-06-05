@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const nutritSel  = $("nutritionType");
   const weightInp  = $("weight");
   const volSel     = $("bagVolume");
+  const importInp  = $("recipeImport");
+  const importStatus = $("importStatus");
 
   const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
 
@@ -68,6 +70,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const naReqMax = $("naReqMax");
   const kReqMin  = $("kReqMin");
   const kReqMax  = $("kReqMax");
+
+  const additiveInputIds = Array.from({ length: 17 }, (_, i) => `add${i + 1}`);
 
   const updateKcal = () => {
     const vol = parseInt(volSel.value, 10);
@@ -118,6 +122,146 @@ document.addEventListener("DOMContentLoaded", async () => {
     nutritSel.value === "obwodowe"
       ? `${productSel.value} Peripheral`
       : productSel.value;
+
+  function showImportStatus (message, type = "info") {
+    if (!importStatus) return;
+    importStatus.textContent = message;
+    importStatus.className = `import-status ${type}`;
+  }
+
+  function getCellPlainValue (ws, address) {
+    const value = ws.getCell(address).value;
+    if (value && typeof value === "object") {
+      if (value instanceof Date) return value;
+      if ("result" in value) return value.result;
+      if ("text" in value) return value.text;
+      if (Array.isArray(value.richText)) return value.richText.map(part => part.text).join("");
+    }
+    return value;
+  }
+
+  function toInputValue (value) {
+    if (value === null || value === undefined) return "";
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    return String(value).trim();
+  }
+
+  function excelSerialToDateInput (serial) {
+    if (!Number.isFinite(serial)) return "";
+    const utcDays = Math.floor(serial - 25569);
+    const utcValue = utcDays * 86400 * 1000;
+    return new Date(utcValue).toISOString().slice(0, 10);
+  }
+
+  function toDateInputValue (value) {
+    if (value === null || value === undefined || value === "") return "";
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (typeof value === "number") return excelSerialToDateInput(value);
+    const text = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const parsed = new Date(text);
+    return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString().slice(0, 10);
+  }
+
+  function setAdditiveValue (id, value) {
+    const el = $(id);
+    if (!el) return;
+    el.value = value === 0 ? "" : toInputValue(value);
+    manualAdditives.add(id);
+  }
+
+  function chooseImportedBag (ws) {
+    const rowMap = {
+      "Kabiven": 23,
+      "SmofKabiven": 24,
+      "Kabiven Peripheral": 25,
+      "SmofKabiven Peripheral": 26
+    };
+
+    for (const [bag, row] of Object.entries(rowMap)) {
+      const vol = parseInt(getCellPlainValue(ws, `D${row}`), 10);
+      if (vol) return { bag, vol };
+    }
+
+    return null;
+  }
+
+  function setImportedBag (bag, vol) {
+    const central = !bag.endsWith(" Peripheral");
+    const product = bag.replace(" Peripheral", "");
+
+    productSel.value = product;
+    nutritSel.value = central ? "centralne" : "obwodowe";
+    renderBagOptions({ preserveDefaults: true });
+
+    const importedOption = Array.from(volSel.options).find(option => Number(option.value) === vol);
+    if (importedOption) {
+      volSel.value = String(vol);
+    }
+  }
+
+  function readImportedAdditives (ws) {
+    const additives = {};
+    const cellValue = cell => parseNum(getCellPlainValue(ws, cell)) || 0;
+
+    for (let i = 1; i <= 17; i++) {
+      additives[`add${i}`] = getCellPlainValue(ws, `D${27 + i}`);
+    }
+
+    additives.add3 = getCellPlainValue(ws, "H30") || getCellPlainValue(ws, "D30");
+    additives.add6 = cellValue("D33") + cellValue("D34");
+    additives.add8 = cellValue("D35") + cellValue("D36");
+    additives.add10 = cellValue("D37") + cellValue("D38");
+
+    return additives;
+  }
+
+  async function importRecipeFile (file) {
+    if (!file) return;
+    if (!window.ExcelJS) {
+      showImportStatus("Nie można wczytać pliku — biblioteka ExcelJS nie jest dostępna.", "error");
+      return;
+    }
+
+    showImportStatus("Wczytywanie recepty...", "info");
+
+    try {
+      const wb = new ExcelJS.Workbook();
+      await wb.xlsx.load(await file.arrayBuffer());
+      const ws = wb.worksheets[0];
+      if (!ws) throw new Error("Brak arkusza w pliku XLSX.");
+
+      $("fullname").value = toInputValue(getCellPlainValue(ws, "C2"));
+      $("pesel").value = toInputValue(getCellPlainValue(ws, "C6"));
+      weightInp.value = toInputValue(getCellPlainValue(ws, "C7"));
+      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C8"));
+      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C9"));
+
+      manualAdditives.clear();
+      const importedBag = chooseImportedBag(ws);
+      if (importedBag) {
+        setImportedBag(importedBag.bag, importedBag.vol);
+      }
+
+      const additives = readImportedAdditives(ws);
+      for (const id of additiveInputIds) {
+        setAdditiveValue(id, additives[id]);
+      }
+
+      updateKcal();
+      updateDosage();
+      updateAdditiveRanges();
+      updateElectrolyteSummary();
+
+      const fileName = file.name ? `: ${file.name}` : "";
+      showImportStatus(`Wczytano receptę${fileName}.`, "success");
+    } catch (err) {
+      console.error(err);
+      showImportStatus("Nie udało się wczytać recepty. Wybierz plik XLSX wygenerowany w tym programie.", "error");
+    } finally {
+      importInp.value = "";
+    }
+  }
 
   /* --- zakresy dodatków --- */
   function updateAdditiveRanges () {
@@ -178,7 +322,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   /* --- worki & kcal --- */
-  function renderBagOptions () {
+  function renderBagOptions (options = {}) {
+    const { preserveDefaults = false } = options;
     const bag = currentBag();
 
     volSel.innerHTML = "";
@@ -193,7 +338,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateKcal();
     updateDosage();
     updateAdditiveRanges();
-    applyDefaultAdditives();
+    if (!preserveDefaults) applyDefaultAdditives();
     updateElectrolyteSummary();
   }
 
@@ -233,6 +378,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     updateElectrolyteSummary();
   });
   weightInp .addEventListener("input",  () => { updateDosage(); updateAdditiveRanges(); });
+  importInp?.addEventListener("change", event => importRecipeFile(event.target.files[0]));
 
   renderBagOptions();          // początkowe
   updateElectrolyteSummary();
