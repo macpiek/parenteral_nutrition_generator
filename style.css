@@ -260,3 +260,14 @@ button:hover{background-color:#005fa3;}
   flex:1;
   margin-bottom:0;
 }
+
+.safety-note{
+  margin-top:1rem;
+  font-size:0.8rem;
+  line-height:1.35;
+  color:#6b4e00;
+  background:#fff8db;
+  border:1px solid #f0d98c;
+  border-radius:4px;
+  padding:0.75rem;
+}
