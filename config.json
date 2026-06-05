@@ -88,29 +88,29 @@
         "Vitalipid N Adult": 10,
         "Soluvit N": 1,
         "Addamel N": 10,
-        "Vit. B1": 2,
-        "Vit. C": 5
+        "Vit. B1": "",
+        "Vit. C": ""
       },
       "Kabiven": {
         "Vitalipid N Adult": 10,
         "Soluvit N": 1,
         "Addamel N": 10,
-        "Vit. B1": 2,
-        "Vit. C": 5
+        "Vit. B1": "",
+        "Vit. C": ""
       },
       "SmofKabiven Peripheral": {
         "Vitalipid N Adult": 10,
         "Soluvit N": 1,
         "Addamel N": 10,
-        "Vit. B1": 2,
-        "Vit. C": 5
+        "Vit. B1": "",
+        "Vit. C": ""
       },
       "Kabiven Peripheral": {
         "Vitalipid N Adult": 10,
         "Soluvit N": 1,
         "Addamel N": 10,
-        "Vit. B1": 2,
-        "Vit. C": 5
+        "Vit. B1": "",
+        "Vit. C": ""
       }
     },
 
