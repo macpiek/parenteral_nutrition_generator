@@ -42,13 +42,35 @@ test('calculateAdditiveRanges limits Dipeptiven and Omegaven by both bag and pat
 test('calculateElectrolyteSummary adds NaCl and KCl in mmol from ml', () => {
   assert.deepEqual(calc.calculateElectrolyteSummary({
     electrolyteConfig: cfg.electrolyteConfig,
+    additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
     bag: 'Kabiven',
     volume: 1026,
-    sodiumChlorideMl: 10,
-    potassiumChlorideMl: 10
+    additives: {
+      add10: 10,
+      add17: 10
+    }
   }), {
     sodium: 47,
     potassium: 44,
+    sodiumMax: 154,
+    potassiumMax: 154
+  });
+});
+
+test('calculateElectrolyteSummary includes sodium from Glycophos', () => {
+  assert.deepEqual(calc.calculateElectrolyteSummary({
+    electrolyteConfig: cfg.electrolyteConfig,
+    additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
+    bag: 'Kabiven',
+    volume: 1026,
+    additives: {
+      add1: 20,
+      add10: 0,
+      add17: 0
+    }
+  }), {
+    sodium: 72,
+    potassium: 24,
     sodiumMax: 154,
     potassiumMax: 154
   });

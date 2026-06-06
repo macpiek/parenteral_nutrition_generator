@@ -269,8 +269,6 @@ button:hover{background-color:#005fa3;}
   margin-bottom:0;
 }
 
-<<<<<<< ours
-<<<<<<< ours
 /* import poprzedniej recepty */
 .import-recipe .hint,
 .import-status{
@@ -291,9 +289,7 @@ button:hover{background-color:#005fa3;}
 .import-status.info{color:#555;}
 .import-status.success{color:#1f7a3a;}
 .import-status.error{color:#b00020;}
-=======
-=======
->>>>>>> theirs
+
 .safety-note{
   margin-top:1rem;
   font-size:0.8rem;
@@ -304,7 +300,3 @@ button:hover{background-color:#005fa3;}
   border-radius:4px;
   padding:0.75rem;
 }
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs

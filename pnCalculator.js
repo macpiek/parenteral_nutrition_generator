@@ -65,10 +65,33 @@
     };
   }
 
-  function calculateElectrolyteSummary ({ electrolyteConfig, bag, volume, sodiumChlorideMl, potassiumChlorideMl }) {
+  function calculateElectrolyteSummary ({
+    electrolyteConfig,
+    additiveElectrolyteConfig,
+    bag,
+    volume,
+    additives,
+    sodiumChlorideMl,
+    potassiumChlorideMl
+  }) {
     const eCfg = electrolyteConfig?.[bag]?.[Number(volume)] || {};
-    const sodium = (eCfg.Na || 0) + ((parseNumber(sodiumChlorideMl) || 0) * 1.54);
-    const potassium = (eCfg.K || 0) + ((parseNumber(potassiumChlorideMl) || 0) * 2);
+    let sodium = eCfg.Na || 0;
+    let potassium = eCfg.K || 0;
+    const configuredAdditives = additiveElectrolyteConfig || {
+      add10: { K: 2 },
+      add17: { Na: 1.54 }
+    };
+    const additiveValues = additives || {
+      add10: potassiumChlorideMl,
+      add17: sodiumChlorideMl
+    };
+
+    for (const [id, electrolytePerMl] of Object.entries(configuredAdditives)) {
+      const amount = parseNumber(additiveValues[id]) || 0;
+      sodium += amount * (electrolytePerMl.Na || 0);
+      potassium += amount * (electrolytePerMl.K || 0);
+    }
+
     return {
       sodium: Math.round(sodium),
       potassium: Math.round(potassium),
@@ -157,10 +180,10 @@
 
       const electrolytes = calculateElectrolyteSummary({
         electrolyteConfig: cfg.electrolyteConfig,
+        additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
         bag,
         volume,
-        sodiumChlorideMl: additivesById.add17,
-        potassiumChlorideMl: additivesById.add10
+        additives: additivesById
       });
       if (electrolytes.sodiumMax && electrolytes.sodium > electrolytes.sodiumMax) {
         errors.push(`Sód w mieszaninie (${electrolytes.sodium} mmol) przekracza limit worka ${electrolytes.sodiumMax} mmol.`);

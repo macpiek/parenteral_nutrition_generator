@@ -41,13 +41,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const importInp  = $("recipeImport");
   const importStatus = $("importStatus");
 
-<<<<<<< ours
-<<<<<<< ours
-  const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
-  const formatMmol = val => Number.isInteger(val) ? String(val) : val.toFixed(1).replace(/\.0$/, "");
-=======
-=======
->>>>>>> theirs
   const {
     parseNumber: parseNum,
     calculateTotalKcal,
@@ -56,10 +49,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     calculateRequirements,
     validateRecipe
   } = PNCalculator;
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
 
   const kcalSpan = $("bagCalories");
   const additiveKcalPerMl = {
@@ -313,42 +302,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* --- podsumowanie Na i K --- */
   function updateElectrolyteSummary () {
-<<<<<<< ours
-<<<<<<< ours
-    const bag = currentBag();
-    const vol = parseInt(volSel.value, 10);
-    const eCfg = cfg.electrolyteConfig?.[bag]?.[vol] || {};
-    let na = eCfg.Na || 0;
-    let k  = eCfg.K  || 0;
-
-    for (const [id, electrolytePerMl] of Object.entries(cfg.additiveElectrolyteConfig || {})) {
-      const amount = parseNum($(id)?.value) || 0;
-      na += amount * (electrolytePerMl.Na || 0);
-      k  += amount * (electrolytePerMl.K  || 0);
-    }
-
-    naTotal.textContent = formatMmol(na);
-    kTotal.textContent  = formatMmol(k);
-    naMaxSpan.textContent = eCfg.NaMax || 0;
-    kMaxSpan.textContent  = eCfg.KMax || 0;
-=======
-=======
->>>>>>> theirs
+    const additives = Object.fromEntries(
+      Object.keys(cfg.additiveElectrolyteConfig || {}).map(id => [id, $(id)?.value])
+    );
     const summary = calculateElectrolyteSummary({
       electrolyteConfig: cfg.electrolyteConfig,
+      additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
       bag: currentBag(),
       volume: volSel.value,
-      sodiumChlorideMl: $("add17").value,
-      potassiumChlorideMl: $("add10").value
+      additives
     });
     naTotal.textContent = summary.sodium;
     kTotal.textContent  = summary.potassium;
     naMaxSpan.textContent = summary.sodiumMax;
     kMaxSpan.textContent  = summary.potassiumMax;
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
   }
 
   /* --- worki & kcal --- */
