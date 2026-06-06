@@ -4,11 +4,11 @@
   <meta charset="UTF-8">
   <title>Recepta żywienia parenteralnego</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="node_modules/jszip/dist/jszip.min.js"></script>
   <!-- ExcelJS (zachowuje formatowanie) -->
-  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="node_modules/exceljs/dist/exceljs.min.js"></script>
   <!-- FileSaver do pobierania pliku -->
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="node_modules/file-saver/dist/FileSaver.min.js"></script>
 
   <script src="pnCalculator.js" defer></script>
   <script src="script.js" defer></script>
@@ -65,6 +65,7 @@
         </div>
 
       </form>
+      <div id="validationSummary" class="validation-summary" role="alert" aria-live="polite" hidden></div>
       <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
     </div>
     <!-- ▲▲ 1. LEWY KONTENER ▲▲ -->

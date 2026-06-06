@@ -271,3 +271,22 @@ button:hover{background-color:#005fa3;}
   border-radius:4px;
   padding:0.75rem;
 }
+
+.validation-summary{
+  margin-top:1rem;
+  padding:0.75rem;
+  color:#7a1d1d;
+  background:#fff1f1;
+  border:1px solid #f0a3a3;
+  border-radius:4px;
+  font-size:0.9rem;
+  line-height:1.35;
+}
+
+.validation-summary ul{
+  margin:0.5rem 0 0 1.25rem;
+}
+
+.validation-summary li + li{
+  margin-top:0.25rem;
+}
