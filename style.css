@@ -40,11 +40,19 @@ body{
 .divider{
   border:none;
   border-top:1px solid #ccd0d5;
-  margin:2rem -2rem;
+  margin:1.25rem -2rem;
 }
 
 /* Pola formularza */
 .form-group{margin-bottom:1.25rem;}
+
+.patient-data .form-group{
+  margin-bottom:0.8rem;
+}
+
+.patient-data .form-group label{
+  margin-bottom:0.35rem;
+}
 
 .form-group label{
   display:block;
