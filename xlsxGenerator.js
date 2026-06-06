@@ -89,8 +89,7 @@ async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
       const finalBlob = await zip.generateAsync({ type: "blob" });
       const bagLabel   = currentBag.replace(" Peripheral", "");
       const routeLabel = central ? "centralne" : "obwodowe";
-      const safePatient = (data.name || "pacjent").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
-      const fileName   = `${safePatient} ${bagLabel} ${routeLabel}.xlsx`;
+      const fileName   = `${data.name} ${bagLabel} ${routeLabel}.xlsx`;
       saveAs(finalBlob, fileName);
     } catch (err) {
       console.error(err);
