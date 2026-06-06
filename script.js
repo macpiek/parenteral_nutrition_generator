@@ -39,14 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const weightInp  = $("weight");
   const volSel     = $("bagVolume");
 
-  const {
-    parseNumber: parseNum,
-    calculateTotalKcal,
-    calculateAdditiveRanges,
-    calculateElectrolyteSummary,
-    calculateRequirements,
-    validateRecipe
-  } = PNCalculator;
+  const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
 
   const kcalSpan = $("bagCalories");
   const additiveKcalPerMl = {
@@ -77,14 +70,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   const kReqMax  = $("kReqMax");
 
   const updateKcal = () => {
-    const additives = Object.fromEntries(Object.keys(additiveKcalPerMl).map(id => [id, $(id)?.value]));
-    const total = calculateTotalKcal({
-      bagConfig,
-      bag: currentBag(),
-      volume: volSel.value,
-      additives
-    });
-    kcalSpan.textContent = total || "";
+    const vol = parseInt(volSel.value, 10);
+    const bagInfo = (bagConfig[currentBag()] || []).find(b => b.vol === vol);
+    const bagKcal = bagInfo ? bagInfo.kcal : parseFloat(volSel.selectedOptions[0]?.dataset.kcal) || 0;
+    let total = bagKcal;
+    for (const [id, perMl] of Object.entries(additiveKcalPerMl)) {
+      const el = $(id);
+      if (el) total += (parseNum(el.value) || 0) * perMl;
+    }
+    kcalSpan.textContent = total ? Math.round(total) : "";
   };
 
 
@@ -129,21 +123,31 @@ document.addEventListener("DOMContentLoaded", async () => {
   function updateAdditiveRanges () {
     const bag = currentBag();
     const vol = parseInt(volSel.value, 10);
-    const ranges = calculateAdditiveRanges({
-      additiveRangeConfig,
-      constants: { DIPEPTIVEN_PER_KG, OMEGAVEN_PER_KG, ADDAMEL_RANGE, VIT_B1_RANGE, VIT_C_RANGE },
-      bag,
-      volume: vol,
-      weight: weightInp.value
-    });
+    const cfgRange = additiveRangeConfig[bag]?.[vol];
+    const w = parseNum(weightInp.value) || 0;
 
-    rangeDi.textContent  = ranges.di.label;
-    rangeOm.textContent  = ranges.om.label;
-    rangeAd.textContent  = ranges.ad.label;
-    rangeSo.textContent  = ranges.so.label;
-    rangeVi.textContent  = ranges.vi.label;
-    rangeVb1.textContent = ranges.vb1.label;
-    rangeVc.textContent  = ranges.vc.label;
+    const diMax = Math.min(
+      cfgRange?.di ? cfgRange.di[1] : Infinity,
+        w ? Math.round(DIPEPTIVEN_PER_KG * w) : Infinity
+    );
+    rangeDi.textContent = diMax === Infinity ? "Brak danych" : `0 – ${diMax} ml`;
+
+    if (cfgRange?.om) {
+      const omMax = Math.min(
+        cfgRange.om[1],
+        w ? Math.round(OMEGAVEN_PER_KG * w) : Infinity
+      );
+      rangeOm.textContent = `0 – ${omMax} ml`;
+    } else {
+      const omMax = w ? Math.round(OMEGAVEN_PER_KG * w) : Infinity;
+      rangeOm.textContent = omMax === Infinity ? "Brak danych" : `0 – ${omMax} ml`;
+    }
+
+    rangeAd.textContent  = ADDAMEL_RANGE;
+    rangeSo.textContent  = cfgRange ? `${cfgRange.so[0]} – ${cfgRange.so[1]} fiol.` : "Brak danych";
+    rangeVi.textContent  = cfgRange ? `${cfgRange.vi[0]} – ${cfgRange.vi[1]} ml`   : "Brak danych";
+    rangeVb1.textContent = VIT_B1_RANGE;
+    rangeVc.textContent  = VIT_C_RANGE;
   }
 
   function applyDefaultAdditives () {
@@ -158,17 +162,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* --- podsumowanie Na i K --- */
   function updateElectrolyteSummary () {
-    const summary = calculateElectrolyteSummary({
-      electrolyteConfig: cfg.electrolyteConfig,
-      bag: currentBag(),
-      volume: volSel.value,
-      sodiumChlorideMl: $("add17").value,
-      potassiumChlorideMl: $("add10").value
-    });
-    naTotal.textContent = summary.sodium;
-    kTotal.textContent  = summary.potassium;
-    naMaxSpan.textContent = summary.sodiumMax;
-    kMaxSpan.textContent  = summary.potassiumMax;
+    const bag = currentBag();
+    const vol = parseInt(volSel.value, 10);
+    const eCfg = cfg.electrolyteConfig?.[bag]?.[vol] || {};
+    let na = eCfg.Na || 0;
+    let k  = eCfg.K  || 0;
+    const addNa = parseNum($("add17").value) || 0; // NaCl
+    const addK  = parseNum($("add10").value) || 0; // KCl
+    na += addNa * 1.54;
+    k  += addK  * 2;
+    naTotal.textContent = Math.round(na);
+    kTotal.textContent  = Math.round(k);
+    naMaxSpan.textContent = eCfg.NaMax || 0;
+    kMaxSpan.textContent  = eCfg.KMax || 0;
   }
 
   /* --- worki & kcal --- */
@@ -193,20 +199,28 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   const updateDosage = () => {
-    const requirements = calculateRequirements({
-      dosageConfig,
-      bag: currentBag(),
-      weight: weightInp.value
-    });
-    calReqMin.textContent = requirements.calories.min;
-    calReqMax.textContent = requirements.calories.max;
-    naReqMin.textContent = requirements.sodium.min;
-    naReqMax.textContent = requirements.sodium.max;
-    kReqMin.textContent  = requirements.potassium.min;
-    kReqMax.textContent  = requirements.potassium.max;
-    reqMin.textContent = requirements.volume.min;
-    reqMax.textContent = requirements.volume.max;
-    reqAbs.textContent = requirements.volume.absoluteMax;
+    const cfgDose = dosageConfig[currentBag()];
+    const w = parseNum(weightInp.value) || 0;
+    if (w) {
+      calReqMin.textContent = Math.round(25 * w);
+      calReqMax.textContent = Math.round(35 * w);
+      naReqMin.textContent = Math.round(0.5 * w);
+      naReqMax.textContent = Math.round(2 * w);
+      kReqMin.textContent  = Math.round(0.5 * w);
+      kReqMax.textContent  = Math.round(2 * w);
+    } else {
+      calReqMin.textContent = calReqMax.textContent = "0";
+      naReqMin.textContent = naReqMax.textContent = "0";
+      kReqMin.textContent  = kReqMax.textContent  = "0";
+    }
+
+    if (cfgDose && w) {
+      reqMin.textContent = Math.round(cfgDose.min * w);
+      reqMax.textContent = Math.round(cfgDose.max * w);
+      reqAbs.textContent = Math.round(cfgDose.maxDaily * w);
+    } else {
+      reqMin.textContent = reqMax.textContent = reqAbs.textContent = "0";
+    }
   };
 
   /* --- eventy UI --- */
@@ -259,29 +273,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     split(5, 6, 100);
     split(7, 8, 100);
     split(9, 10, 20);
-
-    const additivesById = Object.fromEntries(
-      Array.from({ length: 17 }, (_, i) => [`add${i + 1}`, $(`add${i + 1}`)?.value || ""])
-    );
-
-    const validation = validateRecipe({
-      cfg,
-      productType: productSel.value,
-      nutritionType: nutritSel.value,
-      bag: currentBag(),
-      volume: volSel.value,
-      weight: weightInp.value,
-      name: data.name,
-      pesel: data.pesel,
-      dateFrom: data.dateFrom,
-      dateTo: data.dateTo,
-      additivesById
-    });
-
-    if (!validation.valid) {
-      alert(`Popraw dane przed wygenerowaniem recepty:\n\n${validation.errors.join("\n")}`);
-      return;
-    }
 
     /* flaga centralne/obwodowe */
     const central = nutritSel.value === "centralne";

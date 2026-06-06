@@ -10,7 +10,6 @@
   <!-- FileSaver do pobierania pliku -->
   <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
 
-  <script src="pnCalculator.js" defer></script>
   <script src="script.js" defer></script>
   <script src="xlsxGenerator.js" defer></script>
 
@@ -23,49 +22,48 @@
     <!-- ▼▼ 1. LEWY KONTENER – dane pacjenta ▼▼ -->
     <div class="container">
       <h1>Recepta żywienia parenteralnego</h1>
-      <form id="daneForm" autocomplete="off">
+      <form id="daneForm">
 
         <div class="form-group">
           <label for="fullname">Imię i nazwisko</label>
-          <input type="text" id="fullname" required>
+          <input type="text" id="fullname" value="Jan Kowalski">
         </div>
 
         <div class="form-group">
           <label for="pesel">PESEL</label>
-          <input type="text" id="pesel" inputmode="numeric" pattern="\d{11}" maxlength="11" required>
+          <input type="text" id="pesel" value="80010112345">
           <hr class="divider">
         </div>
 
         <div class="form-group">
           <label for="dateFrom">Data wystawienia</label>
-          <input type="date" id="dateFrom" required>
+          <input type="date" id="dateFrom">
         </div>
         <div class="form-group">
           <label for="dateTo">Data podania</label>
-          <input type="date" id="dateTo" required>
+          <input type="date" id="dateTo">
         </div>
 
         <div class="form-group inline">
           <label for="weight">Masa ciała</label>
-          <input type="text" id="weight" inputmode="decimal" required>
+          <input type="text" id="weight" value="70">
           <span class="unit">kg</span>
         </div>
 
 
         <div class="form-group inline">
           <label for="sodium">Sód</label>
-          <input type="text" id="sodium" inputmode="decimal">
+          <input type="text" id="sodium" value="140">
           <span class="unit">mmol/L</span>
         </div>
 
         <div class="form-group inline">
           <label for="potassium">Potas</label>
-          <input type="text" id="potassium" inputmode="decimal">
+          <input type="text" id="potassium" value="3.5">
           <span class="unit">mmol/L</span>
         </div>
 
       </form>
-      <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
     </div>
     <!-- ▲▲ 1. LEWY KONTENER ▲▲ -->
 
@@ -106,7 +104,7 @@
 
         <tr>
           <td class="label">Glycophos fiol. 20 ml<div class="sub">Fosforan organiczny (glicerofosforan sodowy)</div></td>
-          <td class="input"><input type="text" id="add1" placeholder="ml" inputmode="decimal"></td><td></td>
+          <td class="input"><input type="text" id="add1" placeholder="ml"></td><td></td>
         </tr>
 
         <!-- zmieniona etykieta KCl -->
@@ -115,12 +113,12 @@
             KCl 15% amp. 10/20 ml
             <div class="sub">20&nbsp;mmol K<sup>+</sup>/10&nbsp;ml</div>
           </td>
-          <td class="input"><input type="text" id="add10" placeholder="ml" inputmode="decimal"></td><td></td>
+          <td class="input"><input type="text" id="add10" placeholder="ml"></td><td></td>
         </tr>
 
-        <tr><td class="label">Calcium chloratum 10 % amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml" inputmode="decimal"></td><td></td></tr>
-        <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml" inputmode="decimal"></td><td></td></tr>
-        <tr><td class="label">Magnesi sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml" inputmode="decimal"></td><td></td></tr>
+        <tr><td class="label">Calcium chloratum 10 % amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Magnesi sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml"></td><td></td></tr>
 
         <!-- zmieniona etykieta NaCl -->
         <tr>
@@ -128,7 +126,7 @@
             NaCl 0,9% amp. 10 ml
             <div class="sub">15,4&nbsp;mmol Na<sup>+</sup>/10&nbsp;ml</div>
           </td>
-          <td class="input"><input type="text" id="add17" placeholder="ml" inputmode="decimal"></td><td></td>
+          <td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td>
         </tr>
 
         <tr>
@@ -136,7 +134,7 @@
             Addamel N amp. 10 ml
             <div class="sub">Pierwiastki śladowe, ostrożnie przy cholestazie i&nbsp;PChN</div>
           </td>
-          <td class="input"><input type="text" id="add2" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add2" placeholder="ml"></td>
           <td class="range" id="rangeAdd2">0 – 10 ml</td>
         </tr>
 
@@ -145,19 +143,19 @@
 
         <tr>
           <td class="label">Soluvit N fiol.<div class="sub">Witaminy rozpuszczalne w wodzie</div></td>
-          <td class="input"><input type="text" id="add3" placeholder="ilość fiolek" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add3" placeholder="ilość fiolek"></td>
           <td class="range" id="rangeAdd3"></td>
         </tr>
 
         <tr>
           <td class="label">Vitalipid N Adult amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
-          <td class="input"><input type="text" id="add4" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add4" placeholder="ml"></td>
           <td class="range" id="rangeAdd4"></td>
         </tr>
 
         <tr style="display:none;">
           <td class="label">Vitalipid N Infant amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
-          <td class="input"><input type="text" id="add5" placeholder="ml" inputmode="decimal"></td><td></td>
+          <td class="input"><input type="text" id="add5" placeholder="ml"></td><td></td>
         </tr>
 
         <tr>
@@ -165,7 +163,7 @@
             Vit. B1 50 mg/ml amp. 2 ml
             <div class="sub">Refeeding syndrome, alkoholizm, długie niedożywienie</div>
           </td>
-          <td class="input"><input type="text" id="add15" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add15" placeholder="ml"></td>
           <td class="range" id="rangeAdd15">0 – 6 ml</td>
         </tr>
 
@@ -174,7 +172,7 @@
             Vit. C 100 mg/ml amp. 5 ml
             <div class="sub">Sepsa, rozległe oparzenia, dializa</div>
           </td>
-          <td class="input"><input type="text" id="add16" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add16" placeholder="ml"></td>
           <td class="range" id="rangeAdd16">0 – 20 ml (max. 30 ml)</td>
         </tr>
 
@@ -183,13 +181,13 @@
 
         <tr>
           <td class="label">Dipeptiven but. 50/100 ml<div class="sub">Związek białkowy</div></td>
-          <td class="input"><input type="text" id="add6" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add6" placeholder="ml"></td>
           <td class="range" id="rangeAdd6"></td>
         </tr>
 
         <tr>
           <td class="label">Omegaven but. 50/100 ml<div class="sub">Kwasy omega-3</div></td>
-          <td class="input"><input type="text" id="add8" placeholder="ml" inputmode="decimal"></td>
+          <td class="input"><input type="text" id="add8" placeholder="ml"></td>
           <td class="range" id="rangeAdd8"></td>
         </tr>
       </table>
