@@ -7,6 +7,7 @@
     add6: 0.8,
     add8: 1.12
   };
+  const MIXTURE_SUMMARY_KEYS = ["Na", "K", "Ca", "phosphate", "Mg", "Cl", "aminoAcids", "carbohydrates", "fat"];
 
   function parseNumber (value) {
     if (value === null || value === undefined) return NaN;
@@ -30,10 +31,64 @@
     return (bagConfig[bag] || []).find(item => Number(item.vol) === numericVolume) || null;
   }
 
-  function calculateTotalKcal ({ bagConfig, bag, volume, additives = {} }) {
+  function getAdditiveEnergyConfig (additiveConfig) {
+    if (!additiveConfig) return ADDITIVE_KCAL_PER_ML;
+    return Object.fromEntries(
+      Object.entries(additiveConfig)
+        .filter(([, additive]) => Number.isFinite(Number(additive.energyKcalPerMl)))
+        .map(([id, additive]) => [id, Number(additive.energyKcalPerMl)])
+    );
+  }
+
+  function getAdditiveElectrolyteConfig (additiveConfig, additiveElectrolyteConfig) {
+    if (!additiveConfig) {
+      return additiveElectrolyteConfig || {
+        add1: { Na: 2 },
+        add10: { K: 2 },
+        add17: { Na: 1.54 }
+      };
+    }
+    return Object.fromEntries(
+      Object.entries(additiveConfig)
+        .filter(([, additive]) => additive.compositionPerMl || additive.electrolytes)
+        .map(([id, additive]) => {
+          const composition = additive.compositionPerMl || additive.electrolytes;
+          return [id, Object.fromEntries(
+            Object.entries(composition).filter(([key]) => key === "Na" || key === "K")
+          )];
+        })
+        .filter(([, composition]) => Object.keys(composition).length)
+    );
+  }
+
+  function normalizeSummaryNumber (value) {
+    const rounded = Math.round((value + Number.EPSILON) * 10) / 10;
+    return Number.isInteger(rounded) ? rounded : rounded;
+  }
+
+  function calculateMixtureSummary ({ mixtureCompositionConfig, additiveConfig, bag, volume, additives = {} }) {
+    const base = mixtureCompositionConfig?.[bag]?.[Number(volume)] || {};
+    const summary = Object.fromEntries(MIXTURE_SUMMARY_KEYS.map(key => [key, Number(base[key]) || 0]));
+
+    for (const [id, additive] of Object.entries(additiveConfig || {})) {
+      const composition = additive.compositionPerMl || additive.electrolytes;
+      if (!composition) continue;
+      const amount = parseNumber(additives[id]) || 0;
+      for (const [key, perMl] of Object.entries(composition)) {
+        if (!MIXTURE_SUMMARY_KEYS.includes(key)) continue;
+        summary[key] += amount * (Number(perMl) || 0);
+      }
+    }
+
+    return Object.fromEntries(
+      Object.entries(summary).map(([key, value]) => [key, normalizeSummaryNumber(value)])
+    );
+  }
+
+  function calculateTotalKcal ({ bagConfig, bag, volume, additives = {}, additiveConfig }) {
     const info = getBagInfo(bagConfig, bag, volume);
     let total = info ? Number(info.kcal) : 0;
-    for (const [id, kcalPerMl] of Object.entries(ADDITIVE_KCAL_PER_ML)) {
+    for (const [id, kcalPerMl] of Object.entries(getAdditiveEnergyConfig(additiveConfig))) {
       total += (parseNumber(additives[id]) || 0) * kcalPerMl;
     }
     return total ? Math.round(total) : 0;
@@ -68,6 +123,8 @@
   function calculateElectrolyteSummary ({
     electrolyteConfig,
     additiveElectrolyteConfig,
+    additiveConfig,
+    mixtureCompositionConfig,
     bag,
     volume,
     additives,
@@ -75,26 +132,27 @@
     potassiumChlorideMl
   }) {
     const eCfg = electrolyteConfig?.[bag]?.[Number(volume)] || {};
-    let sodium = eCfg.Na || 0;
-    let potassium = eCfg.K || 0;
-    const configuredAdditives = additiveElectrolyteConfig || {
-      add10: { K: 2 },
-      add17: { Na: 1.54 }
-    };
     const additiveValues = additives || {
       add10: potassiumChlorideMl,
       add17: sodiumChlorideMl
     };
-
-    for (const [id, electrolytePerMl] of Object.entries(configuredAdditives)) {
-      const amount = parseNumber(additiveValues[id]) || 0;
-      sodium += amount * (electrolytePerMl.Na || 0);
-      potassium += amount * (electrolytePerMl.K || 0);
-    }
+    const summary = mixtureCompositionConfig
+      ? calculateMixtureSummary({ mixtureCompositionConfig, additiveConfig, bag, volume, additives: additiveValues })
+      : (() => {
+          let sodium = eCfg.Na || 0;
+          let potassium = eCfg.K || 0;
+          const configuredAdditives = getAdditiveElectrolyteConfig(additiveConfig, additiveElectrolyteConfig);
+          for (const [id, electrolytePerMl] of Object.entries(configuredAdditives)) {
+            const amount = parseNumber(additiveValues[id]) || 0;
+            sodium += amount * (electrolytePerMl.Na || 0);
+            potassium += amount * (electrolytePerMl.K || 0);
+          }
+          return { Na: sodium, K: potassium };
+        })();
 
     return {
-      sodium: Math.round(sodium),
-      potassium: Math.round(potassium),
+      sodium: Math.round(summary.Na || 0),
+      potassium: Math.round(summary.K || 0),
       sodiumMax: eCfg.NaMax || 0,
       potassiumMax: eCfg.KMax || 0
     };
@@ -181,6 +239,8 @@
       const electrolytes = calculateElectrolyteSummary({
         electrolyteConfig: cfg.electrolyteConfig,
         additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
+        additiveConfig: cfg.additiveConfig,
+        mixtureCompositionConfig: cfg.mixtureCompositionConfig,
         bag,
         volume,
         additives: additivesById
@@ -198,10 +258,14 @@
 
   return {
     ADDITIVE_KCAL_PER_ML,
+    MIXTURE_SUMMARY_KEYS,
     parseNumber,
     getCurrentBag,
     getBagInfo,
+    getAdditiveEnergyConfig,
+    getAdditiveElectrolyteConfig,
     calculateTotalKcal,
+    calculateMixtureSummary,
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
     calculateRequirements,

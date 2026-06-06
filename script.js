@@ -4,15 +4,51 @@
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const $ = id => document.getElementById(id);
+  const messagePanel = $("messagePanel");
+
+  function showAppMessage (type, title, messages = []) {
+    if (!messagePanel) return;
+    const list = Array.isArray(messages) ? messages : [messages];
+    messagePanel.hidden = false;
+    messagePanel.className = `message-panel ${type}`;
+    messagePanel.innerHTML = "";
+
+    const strong = document.createElement("strong");
+    strong.textContent = title;
+    messagePanel.appendChild(strong);
+
+    if (list.length === 1) {
+      const paragraph = document.createElement("p");
+      paragraph.textContent = list[0];
+      messagePanel.appendChild(paragraph);
+      return;
+    }
+
+    const ul = document.createElement("ul");
+    list.forEach(message => {
+      const li = document.createElement("li");
+      li.textContent = message;
+      ul.appendChild(li);
+    });
+    messagePanel.appendChild(ul);
+  }
+
+  function clearAppMessage () {
+    if (!messagePanel) return;
+    messagePanel.hidden = true;
+    messagePanel.textContent = "";
+  }
+
   /* ---------- 1. Pobranie konfiguracji ---------- */
   let cfg;
   try {
-    const resp = await fetch("config.json");
+    const resp = await fetch("config.json", { cache: "no-store" });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     cfg = await resp.json();
   } catch (err) {
     console.error(err);
-    alert("Błąd wczytywania pliku konfiguracyjnego (config.json).");
+    showAppMessage("error", "Błąd konfiguracji", "Nie udało się wczytać pliku config.json.");
     return;
   }
 
@@ -31,9 +67,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   } = cfg;
 
-  /* ---------- 2. Cache elementów DOM ---------- */
-  const $ = id => document.getElementById(id);
-
   const productSel = $("productType");
   const nutritSel  = $("nutritionType");
   const weightInp  = $("weight");
@@ -46,15 +79,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     calculateTotalKcal,
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
+    calculateMixtureSummary,
     calculateRequirements,
     validateRecipe
   } = PNCalculator;
 
   const kcalSpan = $("bagCalories");
-  const additiveKcalPerMl = {
-    add6: 0.8,   // Dipeptiven: 80 kcal/100 ml
-    add8: 1.12   // Omegaven: 112 kcal/100 ml
-  };
+  const additiveEnergyIds = Object.keys(PNCalculator.getAdditiveEnergyConfig(cfg.additiveConfig));
+  const additiveCompositionIds = Object.entries(cfg.additiveConfig || {})
+    .filter(([, additive]) => additive.compositionPerMl)
+    .map(([id]) => id);
   const reqMin   = $("reqMin");
   const reqMax   = $("reqMax");
   const reqAbs   = $("reqAbsMax");
@@ -73,6 +107,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const naMaxSpan = $("naMax");
   const kTotal = $("kTotal");
   const kMaxSpan = $("kMax");
+  const caTotal = $("caTotal");
+  const phosphateTotal = $("phosphateTotal");
+  const mgTotal = $("mgTotal");
+  const clTotal = $("clTotal");
+  const aminoAcidsTotal = $("aminoAcidsTotal");
+  const carbohydratesTotal = $("carbohydratesTotal");
+  const fatTotal = $("fatTotal");
   const naReqMin = $("naReqMin");
   const naReqMax = $("naReqMax");
   const kReqMin  = $("kReqMin");
@@ -81,12 +122,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const additiveInputIds = Array.from({ length: 17 }, (_, i) => `add${i + 1}`);
 
   const updateKcal = () => {
-    const additives = Object.fromEntries(Object.keys(additiveKcalPerMl).map(id => [id, $(id)?.value]));
+    const additives = Object.fromEntries(additiveEnergyIds.map(id => [id, $(id)?.value]));
     const total = calculateTotalKcal({
       bagConfig,
       bag: currentBag(),
       volume: volSel.value,
-      additives
+      additives,
+      additiveConfig: cfg.additiveConfig
     });
     kcalSpan.textContent = total || "";
   };
@@ -108,7 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  Object.keys(cfg.additiveElectrolyteConfig || {}).forEach(id => {
+  additiveCompositionIds.forEach(id => {
     const el = $(id);
     if (el) el.addEventListener("input", updateElectrolyteSummary);
   });
@@ -122,6 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const today = new Date().toISOString().slice(0, 10);
   $("dateFrom").value = today;
   $("dateTo").value   = today;
+  weightInp.value = "65";
 
   /* ---------- 4. Funkcje pomocnicze ---------- */
   const currentBag = () =>
@@ -302,12 +345,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* --- podsumowanie Na i K --- */
   function updateElectrolyteSummary () {
+    if (!cfg.mixtureCompositionConfig) {
+      showAppMessage("error", "Błąd konfiguracji", "Brakuje danych składu mieszaniny w config.json.");
+      return;
+    }
     const additives = Object.fromEntries(
-      Object.keys(cfg.additiveElectrolyteConfig || {}).map(id => [id, $(id)?.value])
+      additiveInputIds.map(id => [id, $(id)?.value])
     );
+    const mixtureSummary = calculateMixtureSummary({
+      mixtureCompositionConfig: cfg.mixtureCompositionConfig,
+      additiveConfig: cfg.additiveConfig,
+      bag: currentBag(),
+      volume: volSel.value,
+      additives
+    });
     const summary = calculateElectrolyteSummary({
       electrolyteConfig: cfg.electrolyteConfig,
       additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
+      additiveConfig: cfg.additiveConfig,
+      mixtureCompositionConfig: cfg.mixtureCompositionConfig,
       bag: currentBag(),
       volume: volSel.value,
       additives
@@ -316,6 +372,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     kTotal.textContent  = summary.potassium;
     naMaxSpan.textContent = summary.sodiumMax;
     kMaxSpan.textContent  = summary.potassiumMax;
+    caTotal.textContent = mixtureSummary.Ca;
+    phosphateTotal.textContent = mixtureSummary.phosphate;
+    mgTotal.textContent = mixtureSummary.Mg;
+    clTotal.textContent = mixtureSummary.Cl;
+    aminoAcidsTotal.textContent = mixtureSummary.aminoAcids;
+    carbohydratesTotal.textContent = mixtureSummary.carbohydrates;
+    fatTotal.textContent = mixtureSummary.fat;
   }
 
   /* --- worki & kcal --- */
@@ -375,6 +438,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ---------- 5. Submit = przygotuj dane i wywołaj generator ---------- */
   $("daneForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    clearAppMessage();
 
     /* pobierz wartości dodatków */
     const getAdd = i => {
@@ -428,7 +492,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (!validation.valid) {
-      alert(`Popraw dane przed wygenerowaniem recepty:\n\n${validation.errors.join("\n")}`);
+      showAppMessage("error", "Popraw dane przed wygenerowaniem recepty", validation.errors);
+      messagePanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
 
@@ -440,7 +505,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       data,
       currentBag: currentBag(),
       central,
-      cfg        // przekazujemy pełny konfig, bo tam są wszystkie stałe
+      cfg,        // przekazujemy pełny konfig, bo tam są wszystkie stałe
+      onError: message => showAppMessage("error", "Nie udało się wygenerować recepty", message)
     });
   });
 });

@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <title>Recepta żywienia parenteralnego</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="vendor/jszip/jszip.min.js"></script>
   <!-- ExcelJS (zachowuje formatowanie) -->
-  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="vendor/exceljs/exceljs.min.js"></script>
   <!-- FileSaver do pobierania pliku -->
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="vendor/file-saver/FileSaver.min.js"></script>
 
-  <script src="pnCalculator.js" defer></script>
-  <script src="script.js" defer></script>
-  <script src="xlsxGenerator.js" defer></script>
+  <script src="pnCalculator.js?v=20260606-2" defer></script>
+  <script src="script.js?v=20260606-2" defer></script>
+  <script src="xlsxGenerator.js?v=20260606-2" defer></script>
 
   <!-- Główny arkusz stylów -->
   <link rel="stylesheet" href="style.css">
@@ -23,6 +23,7 @@
     <!-- ▼▼ 1. LEWY KONTENER – dane pacjenta ▼▼ -->
     <div class="container patient-data">
       <h1>Recepta żywienia parenteralnego</h1>
+      <div class="message-panel" id="messagePanel" role="status" aria-live="polite" hidden></div>
       <form id="daneForm" autocomplete="off">
 
         <div class="form-group">
@@ -74,7 +75,6 @@
         </div>
 
       </form>
-      <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
     </div>
     <!-- ▲▲ 1. LEWY KONTENER ▲▲ -->
 
@@ -118,8 +118,7 @@
           <td class="input"><input type="text" id="add1" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
-        <!-- zmieniona etykieta KCl -->
-        <tr style="display:none;">
+        <tr>
           <td class="label">
             KCl 15% amp. 10/20 ml
             <div class="sub">20&nbsp;mmol K<sup>+</sup>/10&nbsp;ml</div>
@@ -131,8 +130,7 @@
         <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml" inputmode="decimal"></td><td></td></tr>
         <tr><td class="label">Magnesi sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml" inputmode="decimal"></td><td></td></tr>
 
-        <!-- zmieniona etykieta NaCl -->
-        <tr style="display:none;">
+        <tr>
           <td class="label">
             NaCl 0,9% amp. 10 ml
             <div class="sub">15,4&nbsp;mmol Na<sup>+</sup>/10&nbsp;ml</div>
@@ -169,7 +167,7 @@
           <td class="input"><input type="text" id="add5" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
-        <tr>
+        <tr style="display:none;">
           <td class="label">
             Vit. B1 50 mg/ml amp. 2 ml
             <div class="sub">Refeeding syndrome, alkoholizm, długie niedożywienie</div>
@@ -178,7 +176,7 @@
           <td class="range" id="rangeAdd15">0 – 6 ml</td>
         </tr>
 
-        <tr>
+        <tr style="display:none;">
           <td class="label">
             Vit. C 100 mg/ml amp. 5 ml
             <div class="sub">Sepsa, rozległe oparzenia, dializa</div>
@@ -236,9 +234,52 @@
             <td><span id="kMax">0</span> mmol</td>
             <td><span id="kReqMin">0</span> - <span id="kReqMax">0</span> mmol</td>
           </tr>
+          <tr>
+            <td>Wapń</td>
+            <td><span id="caTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Fosforany</td>
+            <td><span id="phosphateTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Magnez</td>
+            <td><span id="mgTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Chlorki</td>
+            <td><span id="clTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Białka / aminokwasy</td>
+            <td><span id="aminoAcidsTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Węglowodany</td>
+            <td><span id="carbohydratesTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Tłuszcze</td>
+            <td><span id="fatTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
         </tbody>
       </table>
       <button type="submit" form="daneForm">Pobierz receptę</button>
+      <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
     </div><!-- /mix-params -->
     <!-- ▲▲ 3. PARAMETRY MIESZANINY ▲▲ -->
   </div><!-- /wrapper -->

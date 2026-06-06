@@ -3,23 +3,41 @@
  * Wymaga: ExcelJS, JSZip, FileSaver (już dodane w <head>)
  */
 
-async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
+async function generateRecipeXlsx ({
+    data,
+    currentBag,
+    central,
+    cfg,
+    workbookBuffer,
+    fetchImpl,
+    ExcelJSImpl,
+    JSZipImpl,
+    saveAsImpl,
+    onError,
+    returnBuffer = false
+  }) {
     const {
       bagConfig,
       constants: { TEMPLATE_FILE, PRINT_RANGE }
     } = cfg;
+    const Excel = ExcelJSImpl || globalThis.ExcelJS;
+    const Zip = JSZipImpl || globalThis.JSZip;
+    const fetchTemplate = fetchImpl || globalThis.fetch;
   
     try {
       /* 1. Pobierz szablon XLSX */
-      const resp = await fetch(TEMPLATE_FILE);
-      if (!resp.ok) {
-        alert("Błąd pobierania szablonu");
-        return;
+      let templateBuffer = workbookBuffer;
+      if (!templateBuffer) {
+        const resp = await fetchTemplate(TEMPLATE_FILE);
+        if (!resp.ok) {
+          throw new Error("Błąd pobierania szablonu.");
+        }
+        templateBuffer = await resp.arrayBuffer();
       }
   
       /* 2. Wczytaj workbook */
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.load(await resp.arrayBuffer());
+      const wb = new Excel.Workbook();
+      await wb.xlsx.load(templateBuffer);
       const ws = wb.worksheets[0];
   
       /* 3. Wypełnij dane pacjenta */
@@ -64,7 +82,7 @@ async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
       const buffer = await wb.xlsx.writeBuffer();
   
       /* 8. Modyfikacja workbook.xml (Print_Area) */
-      const zip = await JSZip.loadAsync(buffer);
+      const zip = await Zip.loadAsync(buffer);
       const wbXmlPath = "xl/workbook.xml";
       const wbXmlText = await zip.file(wbXmlPath).async("text");
   
@@ -86,15 +104,32 @@ async function generateRecipeXlsx ({ data, currentBag, central, cfg }) {
       zip.file(wbXmlPath, finalXml);
   
       /* 9. Eksport pliku */
-      const finalBlob = await zip.generateAsync({ type: "blob" });
       const bagLabel   = currentBag.replace(" Peripheral", "");
       const routeLabel = central ? "centralne" : "obwodowe";
       const safePatient = (data.name || "pacjent").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
       const fileName   = `${safePatient} ${bagLabel} ${routeLabel}.xlsx`;
-      saveAs(finalBlob, fileName);
+
+      if (returnBuffer) {
+        return {
+          buffer: await zip.generateAsync({ type: "nodebuffer" }),
+          fileName
+        };
+      }
+
+      const finalBlob = await zip.generateAsync({ type: "blob" });
+      const saveFile = saveAsImpl || globalThis.saveAs;
+      saveFile(finalBlob, fileName);
+      return { fileName };
     } catch (err) {
       console.error(err);
-      alert("Wystąpił błąd podczas generowania pliku XLSX.");
+      const message = err?.message || "Wystąpił błąd podczas generowania pliku XLSX.";
+      if (onError) onError(message);
+      else if (globalThis.alert) alert(message);
+      return null;
     }
   }
+
+if (typeof module === "object" && module.exports) {
+  module.exports = { generateRecipeXlsx };
+}
   

@@ -7,5 +7,12 @@
     "test": "node --test",
     "check:syntax": "node --check script.js && node --check xlsxGenerator.js && node --check pnCalculator.js"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
 }
