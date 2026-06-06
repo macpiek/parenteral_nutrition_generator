@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const importStatus = $("importStatus");
 
   const parseNum = val => parseFloat(String(val).replace(/,/g, '.'));
+  const formatMmol = val => Number.isInteger(val) ? String(val) : val.toFixed(1).replace(/\.0$/, "");
 
   const kcalSpan = $("bagCalories");
   const additiveKcalPerMl = {
@@ -102,7 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  ["add10", "add17"].forEach(id => {
+  Object.keys(cfg.additiveElectrolyteConfig || {}).forEach(id => {
     const el = $(id);
     if (el) el.addEventListener("input", updateElectrolyteSummary);
   });
@@ -311,12 +312,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const eCfg = cfg.electrolyteConfig?.[bag]?.[vol] || {};
     let na = eCfg.Na || 0;
     let k  = eCfg.K  || 0;
-    const addNa = parseNum($("add17").value) || 0; // NaCl
-    const addK  = parseNum($("add10").value) || 0; // KCl
-    na += addNa * 1.54;
-    k  += addK  * 2;
-    naTotal.textContent = Math.round(na);
-    kTotal.textContent  = Math.round(k);
+
+    for (const [id, electrolytePerMl] of Object.entries(cfg.additiveElectrolyteConfig || {})) {
+      const amount = parseNum($(id)?.value) || 0;
+      na += amount * (electrolytePerMl.Na || 0);
+      k  += amount * (electrolytePerMl.K  || 0);
+    }
+
+    naTotal.textContent = formatMmol(na);
+    kTotal.textContent  = formatMmol(k);
     naMaxSpan.textContent = eCfg.NaMax || 0;
     kMaxSpan.textContent  = eCfg.KMax || 0;
   }

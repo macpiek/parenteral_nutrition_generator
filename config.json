@@ -50,6 +50,12 @@
       }
     },
 
+    "additiveElectrolyteConfig": {
+      "add1":  { "Na": 2 },
+      "add10": { "K": 2 },
+      "add17": { "Na": 1.54 }
+    },
+
 
     "additiveRangeConfig": {
       "Kabiven": {
