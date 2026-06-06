@@ -8,6 +8,14 @@
     add8: 1.12
   };
 
+  const ADDITIVE_COUNT = 17;
+
+  const ADDITIVE_EXPORT_SPLITS = [
+    { sourceIndex: 5, targetIndex: 6, packageSizeMl: 100 },
+    { sourceIndex: 7, targetIndex: 8, packageSizeMl: 100 },
+    { sourceIndex: 9, targetIndex: 10, packageSizeMl: 20 }
+  ];
+
   function parseNumber (value) {
     if (value === null || value === undefined) return NaN;
     if (typeof value === "number") return Number.isFinite(value) ? value : NaN;
@@ -108,7 +116,35 @@
     return ((10 - (sum % 10)) % 10) === Number(value[10]);
   }
 
-  function collectRangeErrors (errors, additivesById, ranges) {
+  function normalizeAdditiveForExport (value) {
+    const raw = String(value ?? "").trim();
+    if (raw === "") return "";
+    const parsed = parseNumber(raw);
+    return Number.isNaN(parsed) ? raw : parsed;
+  }
+
+  function prepareAdditivesForWorksheet (additivesById = {}) {
+    const additives = Array.from({ length: ADDITIVE_COUNT }, (_, index) => (
+      normalizeAdditiveForExport(additivesById[`add${index + 1}`])
+    ));
+
+    ADDITIVE_EXPORT_SPLITS.forEach(({ sourceIndex, targetIndex, packageSizeMl }) => {
+      const total = parseNumber(additives[sourceIndex]);
+      if (!Number.isFinite(total) || total <= 0) return;
+      const large = Math.floor(total / packageSizeMl) * packageSizeMl;
+      const small = total - large;
+      additives[sourceIndex] = small || "";
+      additives[targetIndex] = large || "";
+    });
+
+    return additives;
+  }
+
+  function pushIssue (issues, field, message) {
+    issues.push({ field, message, severity: "error" });
+  }
+
+  function collectRangeErrors (issues, additivesById, ranges) {
     const checks = [
       ["add6", "Dipeptiven", ranges.di.max],
       ["add8", "Omegaven", ranges.om.max],
@@ -122,30 +158,31 @@
     checks.forEach(([id, label, max]) => {
       const value = parseNumber(additivesById[id]);
       if (!Number.isNaN(value) && max !== null && max !== Infinity && value > max) {
-        errors.push(`${label}: przekroczono maksymalną wartość ${max}.`);
+        pushIssue(issues, id, `${label}: przekroczono maksymalną wartość ${max}.`);
       }
     });
   }
 
   function validateRecipe ({ cfg, productType, nutritionType, bag, volume, weight, name, pesel, dateFrom, dateTo, additivesById = {} }) {
-    const errors = [];
+    const issues = [];
     const numericWeight = parseNumber(weight);
-    if (!String(name || "").trim()) errors.push("Uzupełnij imię i nazwisko pacjenta.");
-    if (!validatePesel(pesel)) errors.push("PESEL ma nieprawidłowy format lub sumę kontrolną.");
-    if (!dateFrom) errors.push("Uzupełnij datę wystawienia.");
-    if (!dateTo) errors.push("Uzupełnij datę podania.");
-    if (dateFrom && dateTo && dateTo < dateFrom) errors.push("Data podania nie może być wcześniejsza niż data wystawienia.");
-    if (!Number.isFinite(numericWeight) || numericWeight <= 0) errors.push("Masa ciała musi być dodatnią liczbą.");
-    if (!cfg.bagConfig[bag]) errors.push("Wybrano nieobsługiwany typ worka.");
-    if (!getBagInfo(cfg.bagConfig, bag, volume)) errors.push("Wybrano nieobsługiwaną objętość worka.");
+    if (!String(name || "").trim()) pushIssue(issues, "fullname", "Uzupełnij imię i nazwisko pacjenta.");
+    if (!validatePesel(pesel)) pushIssue(issues, "pesel", "PESEL ma nieprawidłowy format lub sumę kontrolną.");
+    if (!dateFrom) pushIssue(issues, "dateFrom", "Uzupełnij datę wystawienia.");
+    if (!dateTo) pushIssue(issues, "dateTo", "Uzupełnij datę podania.");
+    if (dateFrom && dateTo && dateTo < dateFrom) pushIssue(issues, "dateTo", "Data podania nie może być wcześniejsza niż data wystawienia.");
+    if (!Number.isFinite(numericWeight) || numericWeight <= 0) pushIssue(issues, "weight", "Masa ciała musi być dodatnią liczbą.");
+    if (!cfg.bagConfig[bag]) pushIssue(issues, "productType", "Wybrano nieobsługiwany typ worka.");
+    if (!getBagInfo(cfg.bagConfig, bag, volume)) pushIssue(issues, "bagVolume", "Wybrano nieobsługiwaną objętość worka.");
 
     Object.entries(additivesById).forEach(([id, value]) => {
       const raw = String(value ?? "").trim();
-      if (raw && !Number.isFinite(parseNumber(raw))) errors.push(`Dodatek ${id} musi być liczbą.`);
-      if (Number.isFinite(parseNumber(raw)) && parseNumber(raw) < 0) errors.push(`Dodatek ${id} nie może być ujemny.`);
+      const parsed = parseNumber(raw);
+      if (raw && !Number.isFinite(parsed)) pushIssue(issues, id, `Dodatek ${id} musi być liczbą.`);
+      if (Number.isFinite(parsed) && parsed < 0) pushIssue(issues, id, `Dodatek ${id} nie może być ujemny.`);
     });
 
-    if (errors.length === 0) {
+    if (issues.length === 0) {
       const ranges = calculateAdditiveRanges({
         additiveRangeConfig: cfg.additiveRangeConfig,
         constants: cfg.constants,
@@ -153,7 +190,7 @@
         volume,
         weight: numericWeight
       });
-      collectRangeErrors(errors, additivesById, ranges);
+      collectRangeErrors(issues, additivesById, ranges);
 
       const electrolytes = calculateElectrolyteSummary({
         electrolyteConfig: cfg.electrolyteConfig,
@@ -163,18 +200,21 @@
         potassiumChlorideMl: additivesById.add10
       });
       if (electrolytes.sodiumMax && electrolytes.sodium > electrolytes.sodiumMax) {
-        errors.push(`Sód w mieszaninie (${electrolytes.sodium} mmol) przekracza limit worka ${electrolytes.sodiumMax} mmol.`);
+        pushIssue(issues, "add17", `Sód w mieszaninie (${electrolytes.sodium} mmol) przekracza limit worka ${electrolytes.sodiumMax} mmol.`);
       }
       if (electrolytes.potassiumMax && electrolytes.potassium > electrolytes.potassiumMax) {
-        errors.push(`Potas w mieszaninie (${electrolytes.potassium} mmol) przekracza limit worka ${electrolytes.potassiumMax} mmol.`);
+        pushIssue(issues, "add10", `Potas w mieszaninie (${electrolytes.potassium} mmol) przekracza limit worka ${electrolytes.potassiumMax} mmol.`);
       }
     }
 
-    return { valid: errors.length === 0, errors, productType, nutritionType };
+    const errors = issues.map(issue => issue.message);
+    return { valid: errors.length === 0, errors, issues, productType, nutritionType };
   }
 
   return {
     ADDITIVE_KCAL_PER_ML,
+    ADDITIVE_COUNT,
+    ADDITIVE_EXPORT_SPLITS,
     parseNumber,
     getCurrentBag,
     getBagInfo,
@@ -182,6 +222,7 @@
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
     calculateRequirements,
+    prepareAdditivesForWorksheet,
     validatePesel,
     validateRecipe
   };

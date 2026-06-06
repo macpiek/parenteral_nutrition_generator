@@ -21,14 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     bagConfig,
     additiveRangeConfig,
     additiveDefaultConfig,
-    dosageConfig,
-    constants: {
-      DIPEPTIVEN_PER_KG,
-      OMEGAVEN_PER_KG,
-      ADDAMEL_RANGE,
-      VIT_B1_RANGE,
-      VIT_C_RANGE
-    }
+    dosageConfig
   } = cfg;
 
   /* ---------- 2. Cache elementów DOM ---------- */
@@ -45,14 +38,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
     calculateRequirements,
+    getCurrentBag,
+    ADDITIVE_KCAL_PER_ML,
+    prepareAdditivesForWorksheet,
     validateRecipe
   } = PNCalculator;
 
   const kcalSpan = $("bagCalories");
-  const additiveKcalPerMl = {
-    add6: 0.8,   // Dipeptiven: 80 kcal/100 ml
-    add8: 1.12   // Omegaven: 112 kcal/100 ml
-  };
   const reqMin   = $("reqMin");
   const reqMax   = $("reqMax");
   const reqAbs   = $("reqAbsMax");
@@ -75,9 +67,67 @@ document.addEventListener("DOMContentLoaded", async () => {
   const naReqMax = $("naReqMax");
   const kReqMin  = $("kReqMin");
   const kReqMax  = $("kReqMax");
+  const validationSummary = $("validationSummary");
+
+  function fieldForIssue (issue) {
+    return issue && typeof issue === "object" ? issue.field : null;
+  }
+
+  function messageForIssue (issue) {
+    return issue && typeof issue === "object" ? issue.message : issue;
+  }
+
+  function clearInvalidFields () {
+    document.querySelectorAll(".is-invalid").forEach(el => {
+      el.classList.remove("is-invalid");
+      el.removeAttribute("aria-invalid");
+    });
+  }
+
+  function showMessages (issues, title = "Popraw dane przed wygenerowaniem recepty:") {
+    if (!validationSummary) return;
+    clearInvalidFields();
+    validationSummary.hidden = false;
+    validationSummary.innerHTML = "";
+
+    const heading = document.createElement("strong");
+    heading.textContent = title;
+    validationSummary.appendChild(heading);
+
+    const list = document.createElement("ul");
+    issues.forEach(issue => {
+      const item = document.createElement("li");
+      const fieldId = fieldForIssue(issue);
+      const message = messageForIssue(issue);
+      const field = fieldId ? $(fieldId) : null;
+
+      if (field) {
+        field.classList.add("is-invalid");
+        field.setAttribute("aria-invalid", "true");
+        const link = document.createElement("button");
+        link.type = "button";
+        link.className = "validation-link";
+        link.textContent = message;
+        link.addEventListener("click", () => field.focus());
+        item.appendChild(link);
+      } else {
+        item.textContent = message;
+      }
+      list.appendChild(item);
+    });
+    validationSummary.appendChild(list);
+    validationSummary.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function clearMessages () {
+    if (!validationSummary) return;
+    clearInvalidFields();
+    validationSummary.hidden = true;
+    validationSummary.innerHTML = "";
+  }
 
   const updateKcal = () => {
-    const additives = Object.fromEntries(Object.keys(additiveKcalPerMl).map(id => [id, $(id)?.value]));
+    const additives = Object.fromEntries(Object.keys(ADDITIVE_KCAL_PER_ML).map(id => [id, $(id)?.value]));
     const total = calculateTotalKcal({
       bagConfig,
       bag: currentBag(),
@@ -100,18 +150,21 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   for (const el of Object.values(additiveInputs)) {
     if (el) {
-      el.addEventListener("input", () => manualAdditives.add(el.id));
+      el.addEventListener("input", () => {
+        manualAdditives.add(el.id);
+        clearMessages();
+      });
     }
   }
 
   ["add10", "add17"].forEach(id => {
     const el = $(id);
-    if (el) el.addEventListener("input", updateElectrolyteSummary);
+    if (el) el.addEventListener("input", () => { clearMessages(); updateElectrolyteSummary(); });
   });
 
   ["add6", "add8"].forEach(id => {
     const el = $(id);
-    if (el) el.addEventListener("input", updateKcal);
+    if (el) el.addEventListener("input", () => { clearMessages(); updateKcal(); });
   });
 
   /* ---------- 3. Inicjalizacja dat ---------- */
@@ -120,10 +173,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("dateTo").value   = today;
 
   /* ---------- 4. Funkcje pomocnicze ---------- */
-  const currentBag = () =>
-    nutritSel.value === "obwodowe"
-      ? `${productSel.value} Peripheral`
-      : productSel.value;
+  const currentBag = () => getCurrentBag(productSel.value, nutritSel.value);
 
   /* --- zakresy dodatków --- */
   function updateAdditiveRanges () {
@@ -131,7 +181,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const vol = parseInt(volSel.value, 10);
     const ranges = calculateAdditiveRanges({
       additiveRangeConfig,
-      constants: { DIPEPTIVEN_PER_KG, OMEGAVEN_PER_KG, ADDAMEL_RANGE, VIT_B1_RANGE, VIT_C_RANGE },
+      constants: cfg.constants,
       bag,
       volume: vol,
       weight: weightInp.value
@@ -210,15 +260,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   /* --- eventy UI --- */
-  productSel.addEventListener("change", renderBagOptions);
-  nutritSel .addEventListener("change", renderBagOptions);
+  productSel.addEventListener("change", () => { clearMessages(); renderBagOptions(); });
+  nutritSel .addEventListener("change", () => { clearMessages(); renderBagOptions(); });
   volSel    .addEventListener("change", () => {
+    clearMessages();
     updateKcal();
     updateDosage();
     updateAdditiveRanges();
     updateElectrolyteSummary();
   });
-  weightInp .addEventListener("input",  () => { updateDosage(); updateAdditiveRanges(); });
+  weightInp .addEventListener("input",  () => { clearMessages(); updateDosage(); updateAdditiveRanges(); });
+  ["fullname", "pesel", "dateFrom", "dateTo", "sodium", "potassium"].forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("input", clearMessages);
+  });
 
   renderBagOptions();          // początkowe
   updateElectrolyteSummary();
@@ -227,15 +282,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("daneForm").addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    /* pobierz wartości dodatków */
-    const getAdd = i => {
-      const el = $(`add${i}`);
-      if (!el) return "";
-      const raw = el.value.trim();
-      if (raw === "") return "";
-      const n = parseFloat(raw.replace(/,/g, "."));
-      return isNaN(n) ? raw : n;
-    };
+    const additivesById = Object.fromEntries(
+      Array.from({ length: PNCalculator.ADDITIVE_COUNT }, (_, i) => [`add${i + 1}`, $(`add${i + 1}`)?.value || ""])
+    );
 
     const data = {
       name     : $("fullname").value.trim(),
@@ -244,25 +293,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       dateTo   : $("dateTo").value,
       weight   : parseNum(weightInp.value) || 0,
       bagVol   : parseInt(volSel.value, 10) || 0,
-      additives: Array.from({ length: 17 }, (_, i) => getAdd(i + 1))
+      additives: prepareAdditivesForWorksheet(additivesById)
     };
-
-    /* helper dzielący wpisaną ilość na małe i duże opakowania
-       (np. 50/100 ml czy 10/20 ml) wykorzystywane w arkuszu */
-    const split = (iS, iL, size) => {
-      const total = parseFloat(data.additives[iS]) || 0;
-      const large = Math.floor(total / size) * size;
-      const small = total - large;
-      data.additives[iS] = small || "";
-      data.additives[iL] = large || "";
-    };
-    split(5, 6, 100);
-    split(7, 8, 100);
-    split(9, 10, 20);
-
-    const additivesById = Object.fromEntries(
-      Array.from({ length: 17 }, (_, i) => [`add${i + 1}`, $(`add${i + 1}`)?.value || ""])
-    );
 
     const validation = validateRecipe({
       cfg,
@@ -279,19 +311,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (!validation.valid) {
-      alert(`Popraw dane przed wygenerowaniem recepty:\n\n${validation.errors.join("\n")}`);
+      showMessages(validation.issues);
       return;
     }
+
+    clearMessages();
 
     /* flaga centralne/obwodowe */
     const central = nutritSel.value === "centralne";
 
     /* wywołaj zewnętrzny generator */
-    await generateRecipeXlsx({
-      data,
-      currentBag: currentBag(),
-      central,
-      cfg        // przekazujemy pełny konfig, bo tam są wszystkie stałe
-    });
+    try {
+      await generateRecipeXlsx({
+        data,
+        currentBag: currentBag(),
+        central,
+        cfg        // przekazujemy pełny konfig, bo tam są wszystkie stałe
+      });
+    } catch (err) {
+      console.error(err);
+      showMessages([err.message || "Nieznany błąd eksportu XLSX."], "Nie udało się wygenerować pliku XLSX:");
+    }
   });
 });

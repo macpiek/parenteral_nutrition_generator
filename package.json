@@ -5,7 +5,14 @@
   "description": "Generator recepty żywienia parenteralnego z walidacją danych i testami jednostkowymi.",
   "scripts": {
     "test": "node --test",
-    "check:syntax": "node --check script.js && node --check xlsxGenerator.js && node --check pnCalculator.js"
+    "check:syntax": "node --check script.js && node --check xlsxGenerator.js && node --check pnCalculator.js",
+    "vendor:copy": "mkdir -p vendor/jszip vendor/exceljs vendor/file-saver && cp node_modules/jszip/dist/jszip.min.js vendor/jszip/jszip.min.js && cp node_modules/exceljs/dist/exceljs.min.js vendor/exceljs/exceljs.min.js && cp node_modules/file-saver/dist/FileSaver.min.js vendor/file-saver/FileSaver.min.js && node scripts/stripVendorSourceMaps.js",
+    "check:vendor": "test -f vendor/jszip/jszip.min.js && test -f vendor/exceljs/exceljs.min.js && test -f vendor/file-saver/FileSaver.min.js",
+    "check:conflicts": "node scripts/checkConflictMarkers.js"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "exceljs": "4.4.0",
+    "file-saver": "2.0.5",
+    "jszip": "3.10.1"
+  }
 }

@@ -121,3 +121,44 @@ test('configuration has complete electrolyte, additive range and dosage data for
     }
   }
 });
+
+test('prepareAdditivesForWorksheet normalizes decimal comma and splits large packages', () => {
+  const additives = calc.prepareAdditivesForWorksheet({
+    add1: '1,5',
+    add6: '250',
+    add8: '125',
+    add10: '45',
+    add17: 'tekst'
+  });
+
+  assert.equal(additives.length, calc.ADDITIVE_COUNT);
+  assert.equal(additives[0], 1.5);
+  assert.equal(additives[5], 50);
+  assert.equal(additives[6], 200);
+  assert.equal(additives[7], 25);
+  assert.equal(additives[8], 100);
+  assert.equal(additives[9], 5);
+  assert.equal(additives[10], 40);
+  assert.equal(additives[16], 'tekst');
+});
+
+test('validateRecipe exposes field-level issues for inline UI highlighting', () => {
+  const result = calc.validateRecipe({
+    cfg,
+    productType: 'SmofKabiven',
+    nutritionType: 'obwodowe',
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    weight: '',
+    name: '',
+    pesel: '123',
+    dateFrom: '',
+    dateTo: '',
+    additivesById: { add6: '-1' }
+  });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.issues.some(issue => issue.field === 'fullname' && /imię i nazwisko/.test(issue.message)));
+  assert.ok(result.issues.some(issue => issue.field === 'add6' && /ujemny/.test(issue.message)));
+  assert.deepEqual(result.errors, result.issues.map(issue => issue.message));
+});
