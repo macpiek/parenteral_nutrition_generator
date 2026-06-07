@@ -190,6 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const {
     parseNumber: parseNum,
     calculateTotalKcal,
+    calculateTotalVolume,
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
     calculateMixtureSummary,
@@ -198,7 +199,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } = PNCalculator;
 
   const kcalSpan = $("bagCalories");
-  const additiveEnergyIds = Object.keys(PNCalculator.getAdditiveEnergyConfig(cfg.additiveConfig));
+  const totalVolumeSpan = $("totalMixtureVolume");
   const additiveCompositionIds = Object.entries(cfg.additiveConfig || {})
     .filter(([, additive]) => additive.compositionPerMl)
     .map(([id]) => id);
@@ -234,21 +235,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const additiveInputIds = Array.from({ length: 17 }, (_, i) => `add${i + 1}`);
 
+  const readAdditiveValues = () => Object.fromEntries(
+    additiveInputIds.map(id => [id, $(id)?.value || ""])
+  );
+
   const updateKcal = () => {
-    const additives = Object.fromEntries(additiveEnergyIds.map(id => [id, $(id)?.value]));
     const total = calculateTotalKcal({
       bagConfig,
       bag: currentBag(),
       volume: volSel.value,
-      additives,
+      additives: readAdditiveValues(),
       additiveConfig: cfg.additiveConfig
     });
     kcalSpan.textContent = total || "";
   };
 
-  const readAdditiveValues = () => Object.fromEntries(
-    additiveInputIds.map(id => [id, $(id)?.value || ""])
-  );
+  const updateTotalVolume = () => {
+    const total = calculateTotalVolume({
+      bagConfig,
+      bag: currentBag(),
+      volume: volSel.value,
+      additives: readAdditiveValues(),
+      additiveConfig: cfg.additiveConfig
+    });
+    totalVolumeSpan.textContent = total || "";
+  };
 
   function collectValidationData () {
     return {
@@ -297,6 +308,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   ["add6", "add8"].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener("input", updateKcal);
+  });
+
+  additiveInputIds.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("input", updateTotalVolume);
   });
 
   /* ---------- 3. Inicjalizacja dat ---------- */
@@ -520,6 +536,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     aminoAcidsTotal.textContent = mixtureSummary.aminoAcids;
     carbohydratesTotal.textContent = mixtureSummary.carbohydrates;
     fatTotal.textContent = mixtureSummary.fat;
+    updateTotalVolume();
   }
 
   /* --- worki & kcal --- */
@@ -537,6 +554,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     updateKcal();
+    updateTotalVolume();
     updateDosage();
     updateAdditiveRanges();
     if (!preserveDefaults) applyDefaultAdditives();
@@ -572,6 +590,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   volSel    .addEventListener("change", () => {
     updateKcal();
+    updateTotalVolume();
     updateDosage();
     updateAdditiveRanges();
     updateElectrolyteSummary();
