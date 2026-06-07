@@ -6,22 +6,26 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const $ = id => document.getElementById(id);
   const messagePanel = $("messagePanel");
+  const generationMessage = $("generationMessage");
 
-  function showAppMessage (type, title, messages = []) {
-    if (!messagePanel) return;
+  function showMessage (panel, type, title, messages = []) {
+    if (!panel) return;
     const list = Array.isArray(messages) ? messages : [messages];
-    messagePanel.hidden = false;
-    messagePanel.className = `message-panel ${type}`;
-    messagePanel.innerHTML = "";
+    const baseClass = panel.classList.contains("generation-message")
+      ? "message-panel generation-message"
+      : "message-panel";
+    panel.hidden = false;
+    panel.className = `${baseClass} ${type}`;
+    panel.innerHTML = "";
 
     const strong = document.createElement("strong");
     strong.textContent = title;
-    messagePanel.appendChild(strong);
+    panel.appendChild(strong);
 
     if (list.length === 1) {
       const paragraph = document.createElement("p");
       paragraph.textContent = list[0];
-      messagePanel.appendChild(paragraph);
+      panel.appendChild(paragraph);
       return;
     }
 
@@ -31,13 +35,84 @@ document.addEventListener("DOMContentLoaded", async () => {
       li.textContent = message;
       ul.appendChild(li);
     });
-    messagePanel.appendChild(ul);
+    panel.appendChild(ul);
+  }
+
+  function showAppMessage (type, title, messages = []) {
+    showMessage(messagePanel, type, title, messages);
   }
 
   function clearAppMessage () {
     if (!messagePanel) return;
     messagePanel.hidden = true;
     messagePanel.textContent = "";
+  }
+
+  function clearGenerationMessage () {
+    if (!generationMessage) return;
+    generationMessage.hidden = true;
+    generationMessage.textContent = "";
+  }
+
+  function clearFieldWarnings () {
+    document.querySelectorAll(".field-warning").forEach(el => el.remove());
+    document.querySelectorAll(".input-warning").forEach(el => el.classList.remove("input-warning"));
+  }
+
+  function targetForWarning (message) {
+    const additiveLabels = {
+      "Dipeptiven": "add6",
+      "Omegaven": "add8",
+      "Soluvit N": "add3",
+      "Vitalipid N Adult": "add4",
+      "Addamel N": "add2",
+      "Vit. B1": "add15",
+      "Vit. C": "add16"
+    };
+    const additiveMatch = message.match(/Dodatek (add\d+)/);
+    if (additiveMatch) return additiveMatch[1];
+    if (message.includes("PESEL")) return "pesel";
+    if (message.includes("Data podania")) return "dateTo";
+    if (message.includes("Data wystawienia")) return "dateFrom";
+    if (message.includes("Masa ciała")) return "weight";
+    if (message.includes("typ worka")) return "productType";
+    if (message.includes("objętość worka")) return "bagVolume";
+    if (message.includes("Sód w mieszaninie")) return "add17";
+    if (message.includes("Potas w mieszaninie")) return "add10";
+    for (const [label, id] of Object.entries(additiveLabels)) {
+      if (message.includes(label)) return id;
+    }
+    return null;
+  }
+
+  function addFieldWarning (fieldId, message) {
+    const field = $(fieldId);
+    if (!field) return false;
+    field.classList.add("input-warning");
+    const warning = document.createElement("div");
+    warning.className = "field-warning";
+    warning.textContent = message;
+
+    const container = field.closest(".form-group") || field.closest("td") || field.parentElement;
+    if (!container) return false;
+    container.appendChild(warning);
+    return true;
+  }
+
+  function showValidationWarnings (messages, options = {}) {
+    const { showPanel = false } = options;
+    clearFieldWarnings();
+    const generalWarnings = [];
+    messages.forEach(message => {
+      const target = targetForWarning(message);
+      if (!target || !addFieldWarning(target, message)) generalWarnings.push(message);
+    });
+
+    if (showPanel && messages.length) {
+      showMessage(generationMessage, "info", "Recepta została wygenerowana z ostrzeżeniami", generalWarnings.length
+        ? generalWarnings
+        : "Sprawdź oznaczone pola przed użyciem recepty.");
+    }
   }
 
   /* ---------- 1. Pobranie konfiguracji ---------- */
@@ -132,6 +207,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     kcalSpan.textContent = total || "";
   };
+
+  const readAdditiveValues = () => Object.fromEntries(
+    additiveInputIds.map(id => [id, $(id)?.value || ""])
+  );
+
+  function collectValidationData () {
+    return {
+      cfg,
+      productType: productSel.value,
+      nutritionType: nutritSel.value,
+      bag: currentBag(),
+      volume: volSel.value,
+      weight: weightInp.value,
+      name: $("fullname").value.trim(),
+      pesel: $("pesel").value.trim(),
+      dateFrom: $("dateFrom").value,
+      dateTo: $("dateTo").value,
+      additivesById: readAdditiveValues()
+    };
+  }
+
+  function refreshValidationWarnings (options = {}) {
+    const validation = validateRecipe(collectValidationData());
+    showValidationWarnings(validation.errors, options);
+    return validation;
+  }
 
 
   const additiveInputs = {
@@ -301,6 +402,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateDosage();
       updateAdditiveRanges();
       updateElectrolyteSummary();
+      refreshValidationWarnings();
 
       const fileName = file.name ? `: ${file.name}` : "";
       showImportStatus(`Wczytano receptę${fileName}.`, "success");
@@ -421,24 +523,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   /* --- eventy UI --- */
-  productSel.addEventListener("change", renderBagOptions);
-  nutritSel .addEventListener("change", renderBagOptions);
+  productSel.addEventListener("change", () => {
+    renderBagOptions();
+    refreshValidationWarnings();
+  });
+  nutritSel .addEventListener("change", () => {
+    renderBagOptions();
+    refreshValidationWarnings();
+  });
   volSel    .addEventListener("change", () => {
     updateKcal();
     updateDosage();
     updateAdditiveRanges();
     updateElectrolyteSummary();
+    refreshValidationWarnings();
   });
-  weightInp .addEventListener("input",  () => { updateDosage(); updateAdditiveRanges(); });
+  weightInp .addEventListener("input",  () => {
+    updateDosage();
+    updateAdditiveRanges();
+    refreshValidationWarnings();
+  });
+  ["fullname", "pesel", "dateFrom", "dateTo", ...additiveInputIds].forEach(id => {
+    const el = $(id);
+    if (el) {
+      el.addEventListener("input", refreshValidationWarnings);
+    }
+  });
   importInp?.addEventListener("change", event => importRecipeFile(event.target.files[0]));
 
   renderBagOptions();          // początkowe
   updateElectrolyteSummary();
+  refreshValidationWarnings();
 
   /* ---------- 5. Submit = przygotuj dane i wywołaj generator ---------- */
   $("daneForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     clearAppMessage();
+    clearGenerationMessage();
+    const validation = refreshValidationWarnings();
 
     /* pobierz wartości dodatków */
     const getAdd = i => {
@@ -473,40 +595,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     split(7, 8, 100);
     split(9, 10, 20);
 
-    const additivesById = Object.fromEntries(
-      Array.from({ length: 17 }, (_, i) => [`add${i + 1}`, $(`add${i + 1}`)?.value || ""])
-    );
-
-    const validation = validateRecipe({
-      cfg,
-      productType: productSel.value,
-      nutritionType: nutritSel.value,
-      bag: currentBag(),
-      volume: volSel.value,
-      weight: weightInp.value,
-      name: data.name,
-      pesel: data.pesel,
-      dateFrom: data.dateFrom,
-      dateTo: data.dateTo,
-      additivesById
-    });
-
-    if (!validation.valid) {
-      showAppMessage("error", "Popraw dane przed wygenerowaniem recepty", validation.errors);
-      messagePanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return;
-    }
-
     /* flaga centralne/obwodowe */
     const central = nutritSel.value === "centralne";
 
     /* wywołaj zewnętrzny generator */
-    await generateRecipeXlsx({
+    const result = await generateRecipeXlsx({
       data,
       currentBag: currentBag(),
       central,
       cfg,        // przekazujemy pełny konfig, bo tam są wszystkie stałe
       onError: message => showAppMessage("error", "Nie udało się wygenerować recepty", message)
     });
+
+    if (result && validation.errors.length) {
+      showValidationWarnings(validation.errors, { showPanel: true });
+    }
   });
 });

@@ -211,14 +211,15 @@
   function validateRecipe ({ cfg, productType, nutritionType, bag, volume, weight, name, pesel, dateFrom, dateTo, additivesById = {} }) {
     const errors = [];
     const numericWeight = parseNumber(weight);
-    if (!String(name || "").trim()) errors.push("Uzupełnij imię i nazwisko pacjenta.");
-    if (!validatePesel(pesel)) errors.push("PESEL ma nieprawidłowy format lub sumę kontrolną.");
-    if (!dateFrom) errors.push("Uzupełnij datę wystawienia.");
-    if (!dateTo) errors.push("Uzupełnij datę podania.");
+    const hasSupportedBag = Boolean(cfg.bagConfig[bag]);
+    const hasSupportedVolume = Boolean(getBagInfo(cfg.bagConfig, bag, volume));
+    const hasValidWeight = Number.isFinite(numericWeight) && numericWeight > 0;
+
+    if (String(pesel || "").trim() && !validatePesel(pesel)) errors.push("PESEL ma nieprawidłowy format lub sumę kontrolną.");
     if (dateFrom && dateTo && dateTo < dateFrom) errors.push("Data podania nie może być wcześniejsza niż data wystawienia.");
-    if (!Number.isFinite(numericWeight) || numericWeight <= 0) errors.push("Masa ciała musi być dodatnią liczbą.");
-    if (!cfg.bagConfig[bag]) errors.push("Wybrano nieobsługiwany typ worka.");
-    if (!getBagInfo(cfg.bagConfig, bag, volume)) errors.push("Wybrano nieobsługiwaną objętość worka.");
+    if (!hasValidWeight) errors.push("Masa ciała musi być dodatnią liczbą.");
+    if (!hasSupportedBag) errors.push("Wybrano nieobsługiwany typ worka.");
+    if (!hasSupportedVolume) errors.push("Wybrano nieobsługiwaną objętość worka.");
 
     Object.entries(additivesById).forEach(([id, value]) => {
       const raw = String(value ?? "").trim();
@@ -226,7 +227,7 @@
       if (Number.isFinite(parseNumber(raw)) && parseNumber(raw) < 0) errors.push(`Dodatek ${id} nie może być ujemny.`);
     });
 
-    if (errors.length === 0) {
+    if (hasSupportedBag && hasSupportedVolume && hasValidWeight) {
       const ranges = calculateAdditiveRanges({
         additiveRangeConfig: cfg.additiveRangeConfig,
         constants: cfg.constants,

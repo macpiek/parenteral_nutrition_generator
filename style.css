@@ -67,6 +67,10 @@ body{
   color:#7a2323;
 }
 
+.generation-message{
+  margin:0.75rem 0 1rem;
+}
+
 .mix-params-heading{
   margin:0 0 1.5rem;
   font-size:1.5rem;
@@ -115,10 +119,24 @@ body{
   outline:none;
 }
 
+.input-warning{
+  border-color:#d9822b!important;
+  box-shadow:0 0 0 3px rgba(217,130,43,0.16);
+}
+
+.field-warning{
+  flex-basis:100%;
+  margin-top:0.35rem;
+  font-size:0.78rem;
+  line-height:1.25;
+  color:#8a4b0f;
+}
+
 /* Jednolinijkowe pola (np. masa ciała, Na, K) */
 .form-group.inline{
   display:flex;
   align-items:center;
+  flex-wrap:wrap;
   gap:0.5rem;
 }
 .form-group.inline label{
@@ -303,6 +321,10 @@ button:hover{background-color:#005fa3;}
 .bag-select-row .form-group{
   flex:1;
   margin-bottom:0;
+}
+.bag-select-row .form-group:first-child{
+  flex:1.35;
+  min-width:8.5rem;
 }
 
 /* import poprzedniej recepty */

@@ -24,26 +24,26 @@
     <div class="container patient-data">
       <h1>Recepta żywienia parenteralnego</h1>
       <div class="message-panel" id="messagePanel" role="status" aria-live="polite" hidden></div>
-      <form id="daneForm" autocomplete="off">
+      <form id="daneForm" autocomplete="off" novalidate>
 
         <div class="form-group">
           <label for="fullname">Imię i nazwisko</label>
-          <input type="text" id="fullname" required>
+          <input type="text" id="fullname">
         </div>
 
         <div class="form-group">
           <label for="pesel">PESEL</label>
-          <input type="text" id="pesel" inputmode="numeric" pattern="\d{11}" maxlength="11" required>
+          <input type="text" id="pesel" inputmode="numeric" pattern="\d{11}" maxlength="11">
           <hr class="divider">
         </div>
 
         <div class="form-group">
           <label for="dateFrom">Data wystawienia</label>
-          <input type="date" id="dateFrom" required>
+          <input type="date" id="dateFrom">
         </div>
         <div class="form-group">
           <label for="dateTo">Data podania</label>
-          <input type="date" id="dateTo" required>
+          <input type="date" id="dateTo">
         </div>
 
         <div class="form-group inline">
@@ -279,6 +279,7 @@
         </tbody>
       </table>
       <button type="submit" form="daneForm">Pobierz receptę</button>
+      <div class="message-panel generation-message" id="generationMessage" role="status" aria-live="polite" hidden></div>
       <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
     </div><!-- /mix-params -->
     <!-- ▲▲ 3. PARAMETRY MIESZANINY ▲▲ -->

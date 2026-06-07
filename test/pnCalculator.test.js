@@ -167,6 +167,43 @@ test('validateRecipe blocks invalid clinical and production inputs', () => {
   assert.match(result.errors.join('\n'), /Data podania/);
 });
 
+test('validateRecipe allows missing patient identity and dates', () => {
+  const result = calc.validateRecipe({
+    cfg,
+    productType: 'SmofKabiven',
+    nutritionType: 'obwodowe',
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    weight: 65,
+    name: '',
+    pesel: '',
+    dateFrom: '',
+    dateTo: '',
+    additivesById: {}
+  });
+
+  assert.equal(result.valid, true);
+});
+
+test('validateRecipe still catches malformed PESEL when provided', () => {
+  const result = calc.validateRecipe({
+    cfg,
+    productType: 'SmofKabiven',
+    nutritionType: 'obwodowe',
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    weight: 65,
+    name: '',
+    pesel: '123',
+    dateFrom: '',
+    dateTo: '',
+    additivesById: {}
+  });
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /PESEL/);
+});
+
 test('validateRecipe catches exceeded potassium bag limit', () => {
   const result = calc.validateRecipe({
     cfg,
@@ -185,6 +222,27 @@ test('validateRecipe catches exceeded potassium bag limit', () => {
   assert.equal(result.valid, false);
   assert.match(result.errors.join('\n'), /Potas w mieszaninie/);
 });
+
+test('validateRecipe keeps collecting field warnings when patient data has warnings', () => {
+  const result = calc.validateRecipe({
+    cfg,
+    productType: 'SmofKabiven',
+    nutritionType: 'obwodowe',
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    weight: 65,
+    name: '',
+    pesel: '123',
+    dateFrom: '',
+    dateTo: '',
+    additivesById: { add10: '100' }
+  });
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /PESEL/);
+  assert.match(result.errors.join('\n'), /Potas w mieszaninie/);
+});
+
 
 test('configuration has complete electrolyte, additive range and dosage data for every selectable bag', () => {
   for (const [bag, bags] of Object.entries(cfg.bagConfig)) {
@@ -227,6 +285,37 @@ test('Vit B1 and Vit C rows are hidden in the additive table', () => {
 
 test('application starts with default patient weight of 65 kg', () => {
   assert.match(scriptJs, /weightInp\.value\s*=\s*"65"/);
+});
+
+test('form uses the application validation panel instead of native browser bubbles', () => {
+  assert.match(indexHtml, /<form[^>]*id="daneForm"[^>]*novalidate/);
+});
+
+test('submit shows validation warnings without blocking recipe generation', () => {
+  assert.match(scriptJs, /const validation = refreshValidationWarnings\(\);/);
+  assert.match(scriptJs, /if \(result && validation\.errors\.length\) \{[\s\S]*showValidationWarnings\(validation\.errors, \{ showPanel: true \}\);/);
+  assert.doesNotMatch(scriptJs, /if\s*\(!validation\.valid\)\s*{[\s\S]*?return;[\s\S]*?}/);
+});
+
+test('generation warning panel is shown below the download button', () => {
+  const buttonIndex = indexHtml.indexOf('<button type="submit" form="daneForm">Pobierz receptę</button>');
+  const panelIndex = indexHtml.indexOf('id="generationMessage"');
+  assert.ok(buttonIndex > -1);
+  assert.ok(panelIndex > buttonIndex);
+  assert.match(scriptJs, /generationMessage/);
+  assert.match(scriptJs, /Recepta została wygenerowana z ostrzeżeniami/);
+});
+
+test('validation warnings refresh while editing recipe fields', () => {
+  assert.match(scriptJs, /function refreshValidationWarnings/);
+  assert.match(scriptJs, /\["fullname", "pesel", "dateFrom", "dateTo", \.\.\.additiveInputIds\]\.forEach/);
+  assert.match(scriptJs, /weightInp \.addEventListener\("input"[\s\S]*refreshValidationWarnings\(\);/);
+});
+
+test('application does not persist form data in browser storage', () => {
+  assert.doesNotMatch(scriptJs, /localStorage/);
+  assert.doesNotMatch(scriptJs, /sessionStorage/);
+  assert.doesNotMatch(scriptJs, /draftStorageKey/);
 });
 
 test('safety note is shown in the right parameters panel', () => {
