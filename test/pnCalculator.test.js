@@ -32,6 +32,25 @@ test('calculateTotalKcal includes bag calories plus Dipeptiven and Omegaven calo
   }), 868);
 });
 
+test('calculateTotalVolume includes selected bag volume and ml additives', () => {
+  assert.equal(calc.calculateTotalVolume({
+    bagConfig: cfg.bagConfig,
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    additiveConfig: cfg.additiveConfig,
+    additives: {
+      add1: '10,5',
+      add2: '10',
+      add3: '1',
+      add4: '10',
+      add6: '50',
+      add8: '25',
+      add10: '10',
+      add17: '10'
+    }
+  }), 1331.5);
+});
+
 test('calculateAdditiveRanges limits Dipeptiven and Omegaven by both bag and patient weight', () => {
   const ranges = calc.calculateAdditiveRanges({
     additiveRangeConfig: cfg.additiveRangeConfig,
@@ -350,7 +369,7 @@ test('application footer shows author and loads main branch version date automat
   assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
   assert.match(indexHtml, /Autor: Maciej Piekarski/);
   assert.match(indexHtml, /Wersja: <span id="appVersion">ładowanie\.\.\.<\/span>/);
-  assert.match(indexHtml, /<script src="script\.js\?v=20260607-1" defer><\/script>/);
+  assert.match(indexHtml, /<script src="script\.js\?v=20260607-2" defer><\/script>/);
   assert.equal(cfg.versionConfig.githubRepository, 'macpiek/parenteral_nutrition_generator');
   assert.equal(cfg.versionConfig.branch, 'main');
   assert.match(scriptJs, /api\.github\.com\/repos/);
@@ -358,8 +377,9 @@ test('application footer shows author and loads main branch version date automat
   assert.match(scriptJs, /commitData\?\.commit\?\.committer\?\.date/);
 });
 
-test('mixture parameters table includes extended composition rows', () => {
+test('mixture parameters table includes extended composition rows and total volume', () => {
   [
+    'totalMixtureVolume',
     'caTotal',
     'phosphateTotal',
     'mgTotal',
