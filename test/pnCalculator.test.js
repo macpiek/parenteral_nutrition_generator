@@ -312,6 +312,12 @@ test('validation warnings refresh while editing recipe fields', () => {
   assert.match(scriptJs, /weightInp \.addEventListener\("input"[\s\S]*refreshValidationWarnings\(\);/);
 });
 
+test('recipe import maps template date cells to the correct form fields', () => {
+  assert.match(scriptJs, /C8 = Data podania, C9 = Data wystawienia/);
+  assert.match(scriptJs, /\$\("dateTo"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C8"\)\);/);
+  assert.match(scriptJs, /\$\("dateFrom"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C9"\)\);/);
+});
+
 test('application does not persist form data in browser storage', () => {
   assert.doesNotMatch(scriptJs, /localStorage/);
   assert.doesNotMatch(scriptJs, /sessionStorage/);
@@ -380,6 +386,8 @@ test('generateRecipeXlsx fills template cells and print area', async () => {
   assert.equal(ws.getCell('C2').value, 'Jan Testowy');
   assert.equal(ws.getCell('C6').value, '44051401458');
   assert.equal(ws.getCell('C7').value, 70);
+  assert.equal(ws.getCell('C8').value, '2026-06-06');
+  assert.equal(ws.getCell('C9').value, '2026-06-05');
   assert.equal(ws.getCell('C11').value, 'Obwodowa X');
   assert.equal(ws.getCell('C12').value, 'Centralna');
   assert.equal(ws.getCell('C26').value, 800);

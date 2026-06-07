@@ -384,8 +384,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       $("fullname").value = toInputValue(getCellPlainValue(ws, "C2"));
       $("pesel").value = toInputValue(getCellPlainValue(ws, "C6"));
       weightInp.value = toInputValue(getCellPlainValue(ws, "C7"));
-      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C8"));
-      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C9"));
+      // Template: C8 = Data podania, C9 = Data wystawienia.
+      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C8"));
+      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C9"));
 
       manualAdditives.clear();
       const importedBag = chooseImportedBag(ws);
