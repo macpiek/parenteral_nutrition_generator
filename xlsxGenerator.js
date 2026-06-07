@@ -3,6 +3,64 @@
  * Wymaga: ExcelJS, JSZip, FileSaver (już dodane w <head>)
  */
 
+function numericCellValue (cell) {
+  const value = cell.value;
+  if (typeof value === "number") return value;
+  if (value && typeof value === "object" && typeof value.result === "number") return value.result;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function refreshVolumeFormulaCache (ws) {
+  const totalVolume = Array.from({ length: 22 }, (_, i) => 23 + i)
+    .reduce((sum, row) => sum + numericCellValue(ws.getCell(`D${row}`)), 0);
+  const volumeUnit = ws.getCell("C66").value || "";
+
+  ws.getCell("B66").value = {
+    formula: "SUM(D23:D44)",
+    result: totalVolume
+  };
+  ws.getCell("B52").value = {
+    formula: "CONCATENATE(B66,C66)",
+    result: `${totalVolume}${volumeUnit}`
+  };
+}
+
+function setXmlAttribute (node, name, value) {
+  const attributePattern = new RegExp(`\\s${name}="[^"]*"`, "g");
+  const cleanedNode = node.replace(attributePattern, "");
+  const selfClosing = /\/>$/.test(cleanedNode);
+  const tagBody = cleanedNode.replace(/\s*\/?>$/, "");
+  return `${tagBody} ${name}="${value}"${selfClosing ? "/>" : ">"}`;
+}
+
+function forceWorkbookRecalculation (workbookXml) {
+  const recalcAttributes = [
+    ["calcMode", "auto"],
+    ["fullCalcOnLoad", "1"],
+    ["forceFullCalc", "1"]
+  ];
+  const calcPrPattern = /<calcPr\b[^>]*(?:\/>|>[\s\S]*?<\/calcPr>)/;
+
+  if (calcPrPattern.test(workbookXml)) {
+    return workbookXml.replace(calcPrPattern, node => {
+      const openTagMatch = node.match(/^<calcPr\b[^>]*>/);
+      if (!openTagMatch) return node;
+
+      const openTag = recalcAttributes.reduce(
+        (updated, [name, value]) => setXmlAttribute(updated, name, value),
+        openTagMatch[0]
+      );
+      return `${openTag}${node.slice(openTagMatch[0].length)}`;
+    });
+  }
+
+  const calcPrNode = '<calcPr calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>';
+  return workbookXml.includes("<extLst>")
+    ? workbookXml.replace("<extLst>", `${calcPrNode}<extLst>`)
+    : workbookXml.replace("</workbook>", `${calcPrNode}</workbook>`);
+}
+
 async function generateRecipeXlsx ({
     data,
     currentBag,
@@ -44,8 +102,9 @@ async function generateRecipeXlsx ({
       ws.getCell("C2").value = data.name;
       ws.getCell("C6").value = data.pesel;
       ws.getCell("C7").value = data.weight;
-      ws.getCell("C8").value = data.dateFrom;
-      ws.getCell("C9").value = data.dateTo;
+      // Template: C8 = Data podania, C9 = Data wystawienia.
+      ws.getCell("C8").value = data.dateTo;
+      ws.getCell("C9").value = data.dateFrom;
   
       ws.getCell("C11").value = central ? "Obwodowa"    : "Obwodowa X";
       ws.getCell("C12").value = central ? "Centralna X" : "Centralna";
@@ -71,17 +130,20 @@ async function generateRecipeXlsx ({
       data.additives.forEach((v, i) => ws.getCell(28 + i, 4).value = v);
       ws.getCell("D30").value = "";                    // Soluvit do H30
       ws.getCell("H30").value = data.additives[2] || "";
+
+      /* 6. Odśwież cache formuł zależnych od objętości. */
+      refreshVolumeFormulaCache(ws);
   
-      /* 6. Ustawienia strony */
+      /* 7. Ustawienia strony */
       ws.pageSetup.orientation = 'portrait';
       ws.pageSetup.fitToPage   = true;
       ws.pageSetup.fitToWidth  = 1;
       ws.pageSetup.fitToHeight = 1;
   
-      /* 7. Zapis do bufora */
+      /* 8. Zapis do bufora */
       const buffer = await wb.xlsx.writeBuffer();
   
-      /* 8. Modyfikacja workbook.xml (Print_Area) */
+      /* 9. Modyfikacja workbook.xml (Print_Area + przeliczenie formuł w Excelu) */
       const zip = await Zip.loadAsync(buffer);
       const wbXmlPath = "xl/workbook.xml";
       const wbXmlText = await zip.file(wbXmlPath).async("text");
@@ -97,13 +159,14 @@ async function generateRecipeXlsx ({
         `name="_xlnm.Print_Area" vbProcedure="false">` +
         `'${safeSheetName}'!${PRINT_RANGE}</definedName>`;
   
-      const finalXml = clearedXml.includes("<definedNames>")
+      const printAreaXml = clearedXml.includes("<definedNames>")
         ? clearedXml.replace("</definedNames>", `${printAreaNode}</definedNames>`)
         : clearedXml.replace("</workbook>", `<definedNames>${printAreaNode}</definedNames></workbook>`);
+      const finalXml = forceWorkbookRecalculation(printAreaXml);
   
       zip.file(wbXmlPath, finalXml);
   
-      /* 9. Eksport pliku */
+      /* 10. Eksport pliku */
       const bagLabel   = currentBag.replace(" Peripheral", "");
       const routeLabel = central ? "centralne" : "obwodowe";
       const safePatient = (data.name || "pacjent").replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
@@ -130,6 +193,6 @@ async function generateRecipeXlsx ({
   }
 
 if (typeof module === "object" && module.exports) {
-  module.exports = { generateRecipeXlsx };
+  module.exports = { generateRecipeXlsx, forceWorkbookRecalculation, refreshVolumeFormulaCache };
 }
   

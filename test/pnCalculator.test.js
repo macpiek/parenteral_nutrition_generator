@@ -10,6 +10,7 @@ const { generateRecipeXlsx } = require('../xlsxGenerator.js');
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf8'));
 const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const scriptJs = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+const styleCss = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
 
 test('parseNumber accepts Polish decimal comma and rejects malformed values', () => {
   assert.equal(calc.parseNumber('3,5'), 3.5);
@@ -29,6 +30,25 @@ test('calculateTotalKcal includes bag calories plus Dipeptiven and Omegaven calo
     volume: 1206,
     additives: { add6: '50', add8: '25' }
   }), 868);
+});
+
+test('calculateTotalVolume includes selected bag volume and ml additives', () => {
+  assert.equal(calc.calculateTotalVolume({
+    bagConfig: cfg.bagConfig,
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    additiveConfig: cfg.additiveConfig,
+    additives: {
+      add1: '10,5',
+      add2: '10',
+      add3: '1',
+      add4: '10',
+      add6: '50',
+      add8: '25',
+      add10: '10',
+      add17: '10'
+    }
+  }), 1331.5);
 });
 
 test('calculateAdditiveRanges limits Dipeptiven and Omegaven by both bag and patient weight', () => {
@@ -283,8 +303,21 @@ test('Vit B1 and Vit C rows are hidden in the additive table', () => {
   assert.match(indexHtml, /<tr[^>]*display\s*:\s*none[^>]*>[\s\S]*id="add16"/);
 });
 
+
+test('patient electrolyte inline fields use compact sizing', () => {
+  assert.match(styleCss, /\.form-group\.inline label\{[\s\S]*flex:0 0 5\.15rem;/);
+  assert.match(styleCss, /\.form-group\.inline input\{[\s\S]*flex:0 0 3\.25rem;/);
+  assert.match(styleCss, /#weight,[\s\S]*#sodium,[\s\S]*#potassium \{[\s\S]*width:3\.25rem;/);
+  assert.match(styleCss, /\.form-group\.inline \.unit\{[\s\S]*font-size:0\.9rem;/);
+});
+
 test('application starts with default patient weight of 65 kg', () => {
   assert.match(scriptJs, /weightInp\.value\s*=\s*"65"/);
+});
+
+test('application focuses the patient full name field on startup', () => {
+  assert.match(indexHtml, /<input type="text" id="fullname" autofocus>/);
+  assert.match(scriptJs, /const fullnameInp = \$\("fullname"\);[\s\S]*fullnameInp\.focus\(\)/);
 });
 
 test('form uses the application validation panel instead of native browser bubbles', () => {
@@ -312,6 +345,12 @@ test('validation warnings refresh while editing recipe fields', () => {
   assert.match(scriptJs, /weightInp \.addEventListener\("input"[\s\S]*refreshValidationWarnings\(\);/);
 });
 
+test('recipe import maps template date cells to the correct form fields', () => {
+  assert.match(scriptJs, /C8 = Data podania, C9 = Data wystawienia/);
+  assert.match(scriptJs, /\$\("dateTo"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C8"\)\);/);
+  assert.match(scriptJs, /\$\("dateFrom"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C9"\)\);/);
+});
+
 test('application does not persist form data in browser storage', () => {
   assert.doesNotMatch(scriptJs, /localStorage/);
   assert.doesNotMatch(scriptJs, /sessionStorage/);
@@ -330,8 +369,22 @@ test('safety note is shown in the right parameters panel', () => {
   assert.ok(safetyNoteIndex > patientPanelIndex);
 });
 
-test('mixture parameters table includes extended composition rows', () => {
+
+test('application footer shows author and loads main branch version date automatically', () => {
+  assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
+  assert.match(indexHtml, /Autor: Maciej Piekarski/);
+  assert.match(indexHtml, /Wersja: <span id="appVersion">ładowanie\.\.\.<\/span>/);
+  assert.match(indexHtml, /<script src="script\.js\?v=20260607-2" defer><\/script>/);
+  assert.equal(cfg.versionConfig.githubRepository, 'macpiek/parenteral_nutrition_generator');
+  assert.equal(cfg.versionConfig.branch, 'main');
+  assert.match(scriptJs, /api\.github\.com\/repos/);
+  assert.match(scriptJs, /commits\/\$\{encodeURIComponent\(branch\)\}/);
+  assert.match(scriptJs, /commitData\?\.commit\?\.committer\?\.date/);
+});
+
+test('mixture parameters table includes extended composition rows and total volume', () => {
   [
+    'totalMixtureVolume',
     'caTotal',
     'phosphateTotal',
     'mgTotal',
@@ -380,6 +433,8 @@ test('generateRecipeXlsx fills template cells and print area', async () => {
   assert.equal(ws.getCell('C2').value, 'Jan Testowy');
   assert.equal(ws.getCell('C6').value, '44051401458');
   assert.equal(ws.getCell('C7').value, 70);
+  assert.equal(ws.getCell('C8').value, '2026-06-06');
+  assert.equal(ws.getCell('C9').value, '2026-06-05');
   assert.equal(ws.getCell('C11').value, 'Obwodowa X');
   assert.equal(ws.getCell('C12').value, 'Centralna');
   assert.equal(ws.getCell('C26').value, 800);
@@ -388,9 +443,14 @@ test('generateRecipeXlsx fills template cells and print area', async () => {
   assert.equal(ws.getCell('H30').value, 1);
   assert.equal(ws.getCell('D33').value, 50);
   assert.equal(ws.getCell('D35').value, 25);
+  assert.deepEqual(ws.getCell('B66').value, { formula: 'SUM(D23:D44)', result: 1321 });
+  assert.deepEqual(ws.getCell('B52').value, { formula: 'CONCATENATE(B66,C66)', result: '1321ml' });
 
   const zip = await JSZip.loadAsync(result.buffer);
   const workbookXml = await zip.file('xl/workbook.xml').async('text');
   assert.match(workbookXml, /name="_xlnm\.Print_Area"/);
   assert.match(workbookXml, /\$A\$1:\$M\$56/);
+  assert.match(workbookXml, /<calcPr[^>]*calcMode="auto"/);
+  assert.match(workbookXml, /<calcPr[^>]*fullCalcOnLoad="1"/);
+  assert.match(workbookXml, /<calcPr[^>]*forceFullCalc="1"/);
 });

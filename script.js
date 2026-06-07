@@ -54,6 +54,69 @@ document.addEventListener("DOMContentLoaded", async () => {
     generationMessage.textContent = "";
   }
 
+  function resetControlToInitialValue (el) {
+    if (el.tagName === "SELECT") {
+      const defaultIndex = Array.from(el.options).findIndex(option => option.defaultSelected);
+      el.selectedIndex = defaultIndex >= 0 ? defaultIndex : (el.options.length ? 0 : -1);
+      return;
+    }
+
+    if (el.type === "checkbox" || el.type === "radio") {
+      el.checked = el.defaultChecked;
+      return;
+    }
+
+    el.value = el.defaultValue || "";
+  }
+
+  function resetBrowserRestoredValues () {
+    document.querySelectorAll("input, select, textarea").forEach(el => {
+      el.setAttribute("autocomplete", "off");
+      resetControlToInitialValue(el);
+    });
+  }
+
+  resetBrowserRestoredValues();
+
+  const fullnameInp = $("fullname");
+  if (fullnameInp) fullnameInp.focus();
+
+  function formatVersionDate (value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+  }
+
+  async function updateVersionFooter (versionConfig = {}) {
+    const versionEl = $("appVersion");
+    if (!versionEl) return;
+
+    const {
+      githubRepository,
+      branch = "main",
+      fallbackDate = ""
+    } = versionConfig;
+
+    if (fallbackDate) versionEl.textContent = fallbackDate;
+    if (!githubRepository) return;
+
+    const [owner, repo] = githubRepository.split("/");
+    if (!owner || !repo) return;
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(branch)}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const commitData = await response.json();
+      const versionDate = formatVersionDate(commitData?.commit?.committer?.date);
+      if (versionDate) versionEl.textContent = versionDate;
+    } catch (err) {
+      console.warn("Nie udało się pobrać daty wersji z GitHub API.", err);
+    }
+  }
+
   function clearFieldWarnings () {
     document.querySelectorAll(".field-warning").forEach(el => el.remove());
     document.querySelectorAll(".input-warning").forEach(el => el.classList.remove("input-warning"));
@@ -127,6 +190,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  void updateVersionFooter(cfg.versionConfig);
+
   /* Rozpakowanie */
   const {
     bagConfig,
@@ -152,6 +217,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const {
     parseNumber: parseNum,
     calculateTotalKcal,
+    calculateTotalVolume,
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
     calculateMixtureSummary,
@@ -160,7 +226,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   } = PNCalculator;
 
   const kcalSpan = $("bagCalories");
-  const additiveEnergyIds = Object.keys(PNCalculator.getAdditiveEnergyConfig(cfg.additiveConfig));
+  const totalVolumeSpan = $("totalMixtureVolume");
   const additiveCompositionIds = Object.entries(cfg.additiveConfig || {})
     .filter(([, additive]) => additive.compositionPerMl)
     .map(([id]) => id);
@@ -196,21 +262,31 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const additiveInputIds = Array.from({ length: 17 }, (_, i) => `add${i + 1}`);
 
+  const readAdditiveValues = () => Object.fromEntries(
+    additiveInputIds.map(id => [id, $(id)?.value || ""])
+  );
+
   const updateKcal = () => {
-    const additives = Object.fromEntries(additiveEnergyIds.map(id => [id, $(id)?.value]));
     const total = calculateTotalKcal({
       bagConfig,
       bag: currentBag(),
       volume: volSel.value,
-      additives,
+      additives: readAdditiveValues(),
       additiveConfig: cfg.additiveConfig
     });
     kcalSpan.textContent = total || "";
   };
 
-  const readAdditiveValues = () => Object.fromEntries(
-    additiveInputIds.map(id => [id, $(id)?.value || ""])
-  );
+  const updateTotalVolume = () => {
+    const total = calculateTotalVolume({
+      bagConfig,
+      bag: currentBag(),
+      volume: volSel.value,
+      additives: readAdditiveValues(),
+      additiveConfig: cfg.additiveConfig
+    });
+    totalVolumeSpan.textContent = total || "";
+  };
 
   function collectValidationData () {
     return {
@@ -259,6 +335,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   ["add6", "add8"].forEach(id => {
     const el = $(id);
     if (el) el.addEventListener("input", updateKcal);
+  });
+
+  additiveInputIds.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener("input", updateTotalVolume);
   });
 
   /* ---------- 3. Inicjalizacja dat ---------- */
@@ -384,8 +465,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       $("fullname").value = toInputValue(getCellPlainValue(ws, "C2"));
       $("pesel").value = toInputValue(getCellPlainValue(ws, "C6"));
       weightInp.value = toInputValue(getCellPlainValue(ws, "C7"));
-      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C8"));
-      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C9"));
+      // Template: C8 = Data podania, C9 = Data wystawienia.
+      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C8"));
+      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C9"));
 
       manualAdditives.clear();
       const importedBag = chooseImportedBag(ws);
@@ -481,6 +563,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     aminoAcidsTotal.textContent = mixtureSummary.aminoAcids;
     carbohydratesTotal.textContent = mixtureSummary.carbohydrates;
     fatTotal.textContent = mixtureSummary.fat;
+    updateTotalVolume();
   }
 
   /* --- worki & kcal --- */
@@ -498,6 +581,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     updateKcal();
+    updateTotalVolume();
     updateDosage();
     updateAdditiveRanges();
     if (!preserveDefaults) applyDefaultAdditives();
@@ -533,6 +617,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   volSel    .addEventListener("change", () => {
     updateKcal();
+    updateTotalVolume();
     updateDosage();
     updateAdditiveRanges();
     updateElectrolyteSummary();

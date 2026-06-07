@@ -94,6 +94,18 @@
     return total ? Math.round(total) : 0;
   }
 
+  function calculateTotalVolume ({ bagConfig, bag, volume, additives = {}, additiveConfig }) {
+    const info = getBagInfo(bagConfig, bag, volume);
+    let total = info ? Number(info.vol) : (parseNumber(volume) || 0);
+
+    for (const [id, additive] of Object.entries(additiveConfig || {})) {
+      if (additive.unit !== "ml") continue;
+      total += parseNumber(additives[id]) || 0;
+    }
+
+    return total ? Math.round(total * 10) / 10 : 0;
+  }
+
   function calculateAdditiveRanges ({ additiveRangeConfig, constants, bag, volume, weight }) {
     const cfgRange = additiveRangeConfig[bag]?.[Number(volume)];
     const numericWeight = parseNumber(weight) || 0;
@@ -266,6 +278,7 @@
     getAdditiveEnergyConfig,
     getAdditiveElectrolyteConfig,
     calculateTotalKcal,
+    calculateTotalVolume,
     calculateMixtureSummary,
     calculateAdditiveRanges,
     calculateElectrolyteSummary,
