@@ -10,6 +10,7 @@ const { generateRecipeXlsx } = require('../xlsxGenerator.js');
 const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf8'));
 const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const scriptJs = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+const styleCss = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
 
 test('parseNumber accepts Polish decimal comma and rejects malformed values', () => {
   assert.equal(calc.parseNumber('3,5'), 3.5);
@@ -281,6 +282,14 @@ test('NaCl and KCl rows are visible in the additive table', () => {
 test('Vit B1 and Vit C rows are hidden in the additive table', () => {
   assert.match(indexHtml, /<tr[^>]*display\s*:\s*none[^>]*>[\s\S]*id="add15"/);
   assert.match(indexHtml, /<tr[^>]*display\s*:\s*none[^>]*>[\s\S]*id="add16"/);
+});
+
+
+test('patient electrolyte inline fields use compact sizing', () => {
+  assert.match(styleCss, /\.form-group\.inline label\{[\s\S]*flex:0 0 5\.15rem;/);
+  assert.match(styleCss, /\.form-group\.inline input\{[\s\S]*flex:0 0 3\.25rem;/);
+  assert.match(styleCss, /#weight,[\s\S]*#sodium,[\s\S]*#potassium \{[\s\S]*width:3\.25rem;/);
+  assert.match(styleCss, /\.form-group\.inline \.unit\{[\s\S]*font-size:0\.9rem;/);
 });
 
 test('application starts with default patient weight of 65 kg', () => {
