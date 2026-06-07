@@ -158,6 +158,12 @@
       "Kabiven Peripheral":     { "min": 27, "max": 40, "maxDaily": 40 }
     },
 
+    "versionConfig": {
+      "githubRepository": "macpiek/parenteral_nutrition_generator",
+      "branch": "main",
+      "fallbackDate": "2026-06-07"
+    },
+
     "constants": {
       "DIPEPTIVEN_PER_KG": 2.5,
       "OMEGAVEN_PER_KG":   2.0,
