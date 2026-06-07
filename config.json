@@ -159,8 +159,7 @@
     },
 
     "versionConfig": {
-      "githubRepository": "macpiek/parenteral_nutrition_generator",
-      "branch": "main",
+      "date": "2026-06-07",
       "fallbackDate": "2026-06-07"
     },
 

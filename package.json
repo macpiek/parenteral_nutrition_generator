@@ -4,8 +4,11 @@
   "private": true,
   "description": "Generator recepty żywienia parenteralnego z walidacją danych i testami jednostkowymi.",
   "scripts": {
+    "update:version-date": "node scripts/update-version-date.mjs",
+    "pretest": "node scripts/update-version-date.mjs",
+    "precheck:syntax": "node scripts/update-version-date.mjs",
     "test": "node --test",
-    "check:syntax": "node --check script.js && node --check xlsxGenerator.js && node --check pnCalculator.js"
+    "check:syntax": "node --check script.js && node --check xlsxGenerator.js && node --check pnCalculator.js && node --check scripts/update-version-date.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0",
