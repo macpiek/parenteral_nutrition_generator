@@ -315,6 +315,11 @@ test('application starts with default patient weight of 65 kg', () => {
   assert.match(scriptJs, /weightInp\.value\s*=\s*"65"/);
 });
 
+test('application focuses the patient full name field on startup', () => {
+  assert.match(indexHtml, /<input type="text" id="fullname" autofocus>/);
+  assert.match(scriptJs, /const fullnameInp = \$\("fullname"\);[\s\S]*fullnameInp\.focus\(\)/);
+});
+
 test('form uses the application validation panel instead of native browser bubbles', () => {
   assert.match(indexHtml, /<form[^>]*id="daneForm"[^>]*novalidate/);
 });
