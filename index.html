@@ -4,14 +4,15 @@
   <meta charset="UTF-8">
   <title>Recepta żywienia parenteralnego</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="vendor/jszip/jszip.min.js"></script>
   <!-- ExcelJS (zachowuje formatowanie) -->
-  <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+  <script src="vendor/exceljs/exceljs.min.js"></script>
   <!-- FileSaver do pobierania pliku -->
-  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="vendor/file-saver/FileSaver.min.js"></script>
 
-  <script src="script.js" defer></script>
-  <script src="xlsxGenerator.js" defer></script>
+  <script src="pnCalculator.js?v=20260606-2" defer></script>
+  <script src="script.js?v=20260606-2" defer></script>
+  <script src="xlsxGenerator.js?v=20260606-2" defer></script>
 
   <!-- Główny arkusz stylów -->
   <link rel="stylesheet" href="style.css">
@@ -20,79 +21,93 @@
   <div class="wrapper">
 
     <!-- ▼▼ 1. LEWY KONTENER – dane pacjenta ▼▼ -->
-    <div class="container">
+    <div class="container patient-data">
       <h1>Recepta żywienia parenteralnego</h1>
-      <form id="daneForm">
+      <div class="message-panel" id="messagePanel" role="status" aria-live="polite" hidden></div>
+      <form id="daneForm" autocomplete="off" novalidate>
 
         <div class="form-group">
           <label for="fullname">Imię i nazwisko</label>
-          <input type="text" id="fullname" value="Jan Kowalski">
+          <input type="text" id="fullname">
         </div>
 
         <div class="form-group">
           <label for="pesel">PESEL</label>
-          <input type="text" id="pesel" value="80010112345">
+          <input type="text" id="pesel" inputmode="numeric" pattern="\d{11}" maxlength="11">
           <hr class="divider">
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="dateFrom">Data od</label>
-            <input type="date" id="dateFrom">
-          </div>
-          <div class="form-group">
-            <label for="dateTo">Data do</label>
-            <input type="date" id="dateTo">
-          </div>
-        </div>
-
         <div class="form-group">
-          <label for="weight">Masa ciała (kg)</label>
-          <input type="text" id="weight" value="70">
+          <label for="dateFrom">Data wystawienia</label>
+          <input type="date" id="dateFrom">
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="productType">Worek</label>
-            <select id="productType">
-              <option value="SmofKabiven">SmofKabiven</option>
-              <option value="Kabiven">Kabiven</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="nutritionType">Rodzaj żywienia</label>
-            <select id="nutritionType">
-              <option value="obwodowe" selected>Obwodowe</option>
-              <option value="centralne">Centralne</option>
-            </select>
-          </div>
-        </div>
-
         <div class="form-group">
-          <label for="potassium">Poziom potasu (mmol / L)</label>
-          <input type="text" id="potassium" value="3.5">
+          <label for="dateTo">Data podania</label>
+          <input type="date" id="dateTo">
         </div>
 
-        <button type="submit">Pobierz receptę</button>
+        <div class="form-group inline">
+          <label for="weight">Masa ciała</label>
+          <input type="text" id="weight" inputmode="decimal" required>
+          <span class="unit">kg</span>
+        </div>
+
+
+        <div class="form-group inline">
+          <label for="sodium">Sód</label>
+          <input type="text" id="sodium" inputmode="decimal">
+          <span class="unit">mmol/L</span>
+        </div>
+
+        <div class="form-group inline">
+          <label for="potassium">Potas</label>
+          <input type="text" id="potassium" inputmode="decimal">
+          <span class="unit">mmol/L</span>
+        </div>
+
+        <hr class="divider">
+
+        <div class="form-group import-recipe">
+          <label for="recipeImport">Wgraj poprzednią receptę</label>
+          <input type="file" id="recipeImport" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <p class="hint">Wybierz plik XLSX wygenerowany wcześniej w tym programie.</p>
+          <p class="import-status" id="importStatus" aria-live="polite"></p>
+        </div>
+
       </form>
     </div>
     <!-- ▲▲ 1. LEWY KONTENER ▲▲ -->
 
     <!-- ▼▼ 2. PRAWY KONTENER – mieszanina ▼▼ -->
     <div class="container extras">
-      <h2>Mieszanina</h2>
 
       <table class="extras-table">
 
         <!-- wybrany worek + dawkowanie + kcal -->
         <tr>
-          <td class="label"><strong><span id="selectedBagCell"></span></strong></td>
-          <td class="input"><select id="bagVolume"></select></td>
-          <td class="dosing">
-            <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong><br>
-            <em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
+          <td class="label" colspan="3">
+            <div class="form-row bag-select-row">
+              <div class="form-group">
+                <select id="productType">
+                  <option value="SmofKabiven">SmofKabiven</option>
+                  <option value="Kabiven">Kabiven</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <select id="nutritionType">
+                  <option value="obwodowe" selected>Obwodowe</option>
+                  <option value="centralne">Centralne</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <select id="bagVolume"></select>
+              </div>
+            </div>
+            <div class="dosing">
+              <em>Zalecane: </em><strong><span id="reqMin">0</span>–<span id="reqMax">0</span> ml/dobę</strong>
+              &nbsp;<em>Maksymalnie: </em><strong><span id="reqAbsMax">0</span> ml/dobę</strong>
+            </div>
           </td>
-          <td class="calories"><span id="bagCalories"></span> kcal</td>
         </tr>
 
         <!-- ───── ELEKTROLITY ───── -->
@@ -100,29 +115,27 @@
 
         <tr>
           <td class="label">Glycophos fiol. 20 ml<div class="sub">Fosforan organiczny (glicerofosforan sodowy)</div></td>
-          <td class="input"><input type="text" id="add1" placeholder="ml"></td><td></td>
+          <td class="input"><input type="text" id="add1" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
-        <!-- zmieniona etykieta KCl -->
         <tr>
           <td class="label">
             KCl 15% amp. 10/20 ml
             <div class="sub">20&nbsp;mmol K<sup>+</sup>/10&nbsp;ml</div>
           </td>
-          <td class="input"><input type="text" id="add10" placeholder="ml"></td><td></td>
+          <td class="input"><input type="text" id="add10" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
-        <tr><td class="label">Calcium chloratum 10 % amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml"></td><td></td></tr>
-        <tr><td class="label">Magnesii sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml"></td><td></td></tr>
+        <tr><td class="label">Calcium chloratum 10 % amp. 10 ml</td><td class="input"><input type="text" id="add12" placeholder="ml" inputmode="decimal"></td><td></td></tr>
+        <tr><td class="label">Calcium glubionas 10 % amp. 10 ml</td><td class="input"><input type="text" id="add13" placeholder="ml" inputmode="decimal"></td><td></td></tr>
+        <tr><td class="label">Magnesi sulf. 20 % amp. 10 ml</td><td class="input"><input type="text" id="add14" placeholder="ml" inputmode="decimal"></td><td></td></tr>
 
-        <!-- zmieniona etykieta NaCl -->
         <tr>
           <td class="label">
             NaCl 0,9% amp. 10 ml
             <div class="sub">15,4&nbsp;mmol Na<sup>+</sup>/10&nbsp;ml</div>
           </td>
-          <td class="input"><input type="text" id="add17" placeholder="ml"></td><td></td>
+          <td class="input"><input type="text" id="add17" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
         <tr>
@@ -130,7 +143,7 @@
             Addamel N amp. 10 ml
             <div class="sub">Pierwiastki śladowe, ostrożnie przy cholestazie i&nbsp;PChN</div>
           </td>
-          <td class="input"><input type="text" id="add2" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add2" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd2">0 – 10 ml</td>
         </tr>
 
@@ -139,36 +152,36 @@
 
         <tr>
           <td class="label">Soluvit N fiol.<div class="sub">Witaminy rozpuszczalne w wodzie</div></td>
-          <td class="input"><input type="text" id="add3" placeholder="ilość fiolek"></td>
+          <td class="input"><input type="text" id="add3" placeholder="ilość fiolek" inputmode="decimal"></td>
           <td class="range" id="rangeAdd3"></td>
         </tr>
 
         <tr>
           <td class="label">Vitalipid N Adult amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
-          <td class="input"><input type="text" id="add4" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add4" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd4"></td>
         </tr>
 
         <tr style="display:none;">
           <td class="label">Vitalipid N Infant amp. 10 ml<div class="sub">Witaminy rozpuszczalne w tłuszczach (ADEK)</div></td>
-          <td class="input"><input type="text" id="add5" placeholder="ml"></td><td></td>
+          <td class="input"><input type="text" id="add5" placeholder="ml" inputmode="decimal"></td><td></td>
         </tr>
 
-        <tr>
+        <tr style="display:none;">
           <td class="label">
             Vit. B1 50 mg/ml amp. 2 ml
             <div class="sub">Refeeding syndrome, alkoholizm, długie niedożywienie</div>
           </td>
-          <td class="input"><input type="text" id="add15" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add15" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd15">0 – 6 ml</td>
         </tr>
 
-        <tr>
+        <tr style="display:none;">
           <td class="label">
             Vit. C 100 mg/ml amp. 5 ml
             <div class="sub">Sepsa, rozległe oparzenia, dializa</div>
           </td>
-          <td class="input"><input type="text" id="add16" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add16" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd16">0 – 20 ml (max. 30 ml)</td>
         </tr>
 
@@ -177,18 +190,99 @@
 
         <tr>
           <td class="label">Dipeptiven but. 50/100 ml<div class="sub">Związek białkowy</div></td>
-          <td class="input"><input type="text" id="add6" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add6" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd6"></td>
         </tr>
 
         <tr>
           <td class="label">Omegaven but. 50/100 ml<div class="sub">Kwasy omega-3</div></td>
-          <td class="input"><input type="text" id="add8" placeholder="ml"></td>
+          <td class="input"><input type="text" id="add8" placeholder="ml" inputmode="decimal"></td>
           <td class="range" id="rangeAdd8"></td>
         </tr>
       </table>
     </div><!-- /extras -->
     <!-- ▲▲ 2. PRAWY KONTENER ▲▲ -->
+
+    <!-- ▼▼ 3. PARAMETRY MIESZANINY ▼▼ -->
+    <div class="container mix-params">
+      <h2 class="mix-params-heading">Parametry mieszaniny</h2>
+      <table class="mix-params-table">
+        <thead>
+          <tr>
+            <th>Parametr</th>
+            <th>W mieszaninie</th>
+            <th>Maks. w worku</th>
+            <th>Zapotrzebowanie dobowe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Kalorie (łącznie)</td>
+            <td><span id="bagCalories"></span> kcal</td>
+            <td>&ndash;</td>
+            <td><span id="calReqMin">0</span> - <span id="calReqMax">0</span> kcal</td>
+          </tr>
+          <tr>
+            <td>Sód</td>
+            <td><span id="naTotal">0</span> mmol</td>
+            <td><span id="naMax">0</span> mmol</td>
+            <td><span id="naReqMin">0</span> - <span id="naReqMax">0</span> mmol</td>
+          </tr>
+          <tr>
+            <td>Potas</td>
+            <td><span id="kTotal">0</span> mmol</td>
+            <td><span id="kMax">0</span> mmol</td>
+            <td><span id="kReqMin">0</span> - <span id="kReqMax">0</span> mmol</td>
+          </tr>
+          <tr>
+            <td>Wapń</td>
+            <td><span id="caTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Fosforany</td>
+            <td><span id="phosphateTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Magnez</td>
+            <td><span id="mgTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Chlorki</td>
+            <td><span id="clTotal">0</span> mmol</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Białka / aminokwasy</td>
+            <td><span id="aminoAcidsTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Węglowodany</td>
+            <td><span id="carbohydratesTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+          <tr>
+            <td>Tłuszcze</td>
+            <td><span id="fatTotal">0</span> g</td>
+            <td>&ndash;</td>
+            <td>&ndash;</td>
+          </tr>
+        </tbody>
+      </table>
+      <button type="submit" form="daneForm">Pobierz receptę</button>
+      <div class="message-panel generation-message" id="generationMessage" role="status" aria-live="polite" hidden></div>
+      <p class="safety-note">Narzędzie pomocnicze. Ostateczną receptę i zgodność z aktualnymi ChPL oraz stanem klinicznym pacjenta musi zweryfikować uprawniony personel medyczny.</p>
+    </div><!-- /mix-params -->
+    <!-- ▲▲ 3. PARAMETRY MIESZANINY ▲▲ -->
   </div><!-- /wrapper -->
 </body>
 </html>
