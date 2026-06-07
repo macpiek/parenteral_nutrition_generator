@@ -350,6 +350,7 @@ test('application footer shows author and loads main branch version date automat
   assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
   assert.match(indexHtml, /Autor: Maciej Piekarski/);
   assert.match(indexHtml, /Wersja: <span id="appVersion">ładowanie\.\.\.<\/span>/);
+  assert.match(indexHtml, /<script src="script\.js\?v=20260607-1" defer><\/script>/);
   assert.equal(cfg.versionConfig.githubRepository, 'macpiek/parenteral_nutrition_generator');
   assert.equal(cfg.versionConfig.branch, 'main');
   assert.match(scriptJs, /api\.github\.com\/repos/);
