@@ -159,8 +159,9 @@
     },
 
     "versionConfig": {
+      "updatedAt": "2026-06-07 13:54",
       "date": "2026-06-07",
-      "fallbackDate": "2026-06-07"
+      "fallbackDate": "2026-06-07 13:54"
     },
 
     "constants": {

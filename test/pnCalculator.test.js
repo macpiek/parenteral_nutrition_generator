@@ -346,14 +346,15 @@ test('safety note is shown in the right parameters panel', () => {
 });
 
 
-test('application footer shows author and hardcoded version date', () => {
+test('application footer shows author and hardcoded version date and time', () => {
   assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
   assert.match(indexHtml, /Autor: Maciej Piekarski/);
-  assert.match(indexHtml, /Wersja: <span id="appVersion" data-version-date="\d{4}-\d{2}-\d{2}">\d{4}-\d{2}-\d{2}<\/span>/);
+  assert.match(indexHtml, /Wersja: <span id="appVersion" data-version-updated-at="\d{4}-\d{2}-\d{2} \d{2}:\d{2}">\d{4}-\d{2}-\d{2} \d{2}:\d{2}<\/span>/);
+  assert.match(cfg.versionConfig.updatedAt, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
   assert.match(cfg.versionConfig.date, /^\d{4}-\d{2}-\d{2}$/);
-  assert.equal(cfg.versionConfig.fallbackDate, cfg.versionConfig.date);
+  assert.equal(cfg.versionConfig.fallbackDate, cfg.versionConfig.updatedAt);
   assert.doesNotMatch(scriptJs, /api\.github\.com\/repos/);
-  assert.match(scriptJs, /versionConfig\.date/);
+  assert.match(scriptJs, /versionConfig\.updatedAt/);
 });
 
 test('mixture parameters table includes extended composition rows', () => {

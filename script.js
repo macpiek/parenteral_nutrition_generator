@@ -58,12 +58,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const versionEl = $("appVersion");
     if (!versionEl) return;
 
-    const hardcodedDate = versionConfig.date
+    const hardcodedTimestamp = versionConfig.updatedAt
       || versionConfig.fallbackDate
+      || versionEl.dataset.versionUpdatedAt
       || versionEl.dataset.versionDate
+      || versionConfig.date
       || versionEl.textContent.trim();
 
-    versionEl.textContent = hardcodedDate || "brak daty";
+    versionEl.textContent = hardcodedTimestamp || "brak daty";
   }
 
   function clearFieldWarnings () {
