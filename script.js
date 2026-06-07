@@ -54,6 +54,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     generationMessage.textContent = "";
   }
 
+  function resetControlToInitialValue (el) {
+    if (el.tagName === "SELECT") {
+      const defaultIndex = Array.from(el.options).findIndex(option => option.defaultSelected);
+      el.selectedIndex = defaultIndex >= 0 ? defaultIndex : (el.options.length ? 0 : -1);
+      return;
+    }
+
+    if (el.type === "checkbox" || el.type === "radio") {
+      el.checked = el.defaultChecked;
+      return;
+    }
+
+    el.value = el.defaultValue || "";
+  }
+
+  function resetBrowserRestoredValues () {
+    document.querySelectorAll("input, select, textarea").forEach(el => {
+      el.setAttribute("autocomplete", "off");
+      resetControlToInitialValue(el);
+    });
+  }
+
+  resetBrowserRestoredValues();
+
   function formatVersionDate (value) {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
