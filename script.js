@@ -78,6 +78,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   resetBrowserRestoredValues();
 
+  const fullnameInp = $("fullname");
+  if (fullnameInp) fullnameInp.focus();
+
   function formatVersionDate (value) {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
