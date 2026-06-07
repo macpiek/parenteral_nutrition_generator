@@ -44,8 +44,9 @@ async function generateRecipeXlsx ({
       ws.getCell("C2").value = data.name;
       ws.getCell("C6").value = data.pesel;
       ws.getCell("C7").value = data.weight;
-      ws.getCell("C8").value = data.dateFrom;
-      ws.getCell("C9").value = data.dateTo;
+      // Template: C8 = Data podania, C9 = Data wystawienia.
+      ws.getCell("C8").value = data.dateTo;
+      ws.getCell("C9").value = data.dateFrom;
   
       ws.getCell("C11").value = central ? "Obwodowa"    : "Obwodowa X";
       ws.getCell("C12").value = central ? "Centralna X" : "Centralna";
