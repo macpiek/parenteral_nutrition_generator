@@ -137,27 +137,31 @@ body{
   display:flex;
   align-items:center;
   flex-wrap:wrap;
-  gap:0.5rem;
+  column-gap:0.35rem;
+  row-gap:0.35rem;
 }
 .form-group.inline label{
   margin-bottom:0;
   white-space:nowrap;
-  width:6rem;
-  flex:0 0 6rem;
+  width:5.15rem;
+  flex:0 0 5.15rem;
 }
 .form-group.inline input{
-  width:5rem;
-  flex:0 0 auto;
+  width:3.25rem;
+  flex:0 0 3.25rem;
+  padding:0.45rem;
+  font-size:0.95rem;
 }
 
 #weight,
 #sodium,
 #potassium {
-  width:4rem;
+  width:3.25rem;
 }
 .form-group.inline .unit{
-  margin-left:0.25rem;
+  margin-left:0;
   white-space:nowrap;
+  font-size:0.9rem;
 }
 
 /* Flexbox wrapper dla kontenerów */
