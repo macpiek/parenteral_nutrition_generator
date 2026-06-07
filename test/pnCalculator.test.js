@@ -345,6 +345,13 @@ test('safety note is shown in the right parameters panel', () => {
   assert.ok(safetyNoteIndex > patientPanelIndex);
 });
 
+
+test('application footer shows author and main branch version date', () => {
+  assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
+  assert.match(indexHtml, /Autor: Maciej Piekarski/);
+  assert.match(indexHtml, /Wersja: 2026-06-07/);
+});
+
 test('mixture parameters table includes extended composition rows', () => {
   [
     'caTotal',
