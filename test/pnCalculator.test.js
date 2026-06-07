@@ -336,6 +336,18 @@ test('safety note is shown in the right parameters panel', () => {
   assert.ok(safetyNoteIndex > patientPanelIndex);
 });
 
+
+test('application footer shows author and loads main branch version date automatically', () => {
+  assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
+  assert.match(indexHtml, /Autor: Maciej Piekarski/);
+  assert.match(indexHtml, /Wersja: <span id="appVersion">ładowanie\.\.\.<\/span>/);
+  assert.equal(cfg.versionConfig.githubRepository, 'macpiek/parenteral_nutrition_generator');
+  assert.equal(cfg.versionConfig.branch, 'main');
+  assert.match(scriptJs, /api\.github\.com\/repos/);
+  assert.match(scriptJs, /commits\/\$\{encodeURIComponent\(branch\)\}/);
+  assert.match(scriptJs, /commitData\?\.commit\?\.committer\?\.date/);
+});
+
 test('mixture parameters table includes extended composition rows', () => {
   [
     'caTotal',

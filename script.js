@@ -54,6 +54,42 @@ document.addEventListener("DOMContentLoaded", async () => {
     generationMessage.textContent = "";
   }
 
+  function formatVersionDate (value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+  }
+
+  async function updateVersionFooter (versionConfig = {}) {
+    const versionEl = $("appVersion");
+    if (!versionEl) return;
+
+    const {
+      githubRepository,
+      branch = "main",
+      fallbackDate = ""
+    } = versionConfig;
+
+    if (fallbackDate) versionEl.textContent = fallbackDate;
+    if (!githubRepository) return;
+
+    const [owner, repo] = githubRepository.split("/");
+    if (!owner || !repo) return;
+
+    try {
+      const response = await fetch(
+        `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commits/${encodeURIComponent(branch)}`,
+        { cache: "no-store" }
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const commitData = await response.json();
+      const versionDate = formatVersionDate(commitData?.commit?.committer?.date);
+      if (versionDate) versionEl.textContent = versionDate;
+    } catch (err) {
+      console.warn("Nie udało się pobrać daty wersji z GitHub API.", err);
+    }
+  }
+
   function clearFieldWarnings () {
     document.querySelectorAll(".field-warning").forEach(el => el.remove());
     document.querySelectorAll(".input-warning").forEach(el => el.classList.remove("input-warning"));
@@ -126,6 +162,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     showAppMessage("error", "Błąd konfiguracji", "Nie udało się wczytać pliku config.json.");
     return;
   }
+
+  void updateVersionFooter(cfg.versionConfig);
 
   /* Rozpakowanie */
   const {
