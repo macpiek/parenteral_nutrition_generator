@@ -396,9 +396,14 @@ test('generateRecipeXlsx fills template cells and print area', async () => {
   assert.equal(ws.getCell('H30').value, 1);
   assert.equal(ws.getCell('D33').value, 50);
   assert.equal(ws.getCell('D35').value, 25);
+  assert.deepEqual(ws.getCell('B66').value, { formula: 'SUM(D23:D44)', result: 1321 });
+  assert.deepEqual(ws.getCell('B52').value, { formula: 'CONCATENATE(B66,C66)', result: '1321ml' });
 
   const zip = await JSZip.loadAsync(result.buffer);
   const workbookXml = await zip.file('xl/workbook.xml').async('text');
   assert.match(workbookXml, /name="_xlnm\.Print_Area"/);
   assert.match(workbookXml, /\$A\$1:\$M\$56/);
+  assert.match(workbookXml, /<calcPr[^>]*calcMode="auto"/);
+  assert.match(workbookXml, /<calcPr[^>]*fullCalcOnLoad="1"/);
+  assert.match(workbookXml, /<calcPr[^>]*forceFullCalc="1"/);
 });
