@@ -121,6 +121,27 @@ body{
   outline:none;
 }
 
+.date-stepper{
+  display:flex;
+  align-items:center;
+  gap:0.4rem;
+}
+
+.date-stepper input{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.date-stepper button{
+  flex:0 0 2.4rem;
+  width:2.4rem;
+  height:2.4rem;
+  margin-top:0;
+  padding:0;
+  font-size:1.15rem;
+  line-height:1;
+}
+
 .input-warning{
   border-color:#d9822b!important;
   box-shadow:0 0 0 3px rgba(217,130,43,0.16);
@@ -257,6 +278,12 @@ button:hover{background-color:#005fa3;}
 }
 .wrapper > .container.mix-params{
   max-width:30rem;
+}
+
+@media (max-width:1500px){
+  body{
+    justify-content:flex-start;
+  }
 }
 
 /* ---------- DODANE z <STYLE> (przeniesione) ---------- */

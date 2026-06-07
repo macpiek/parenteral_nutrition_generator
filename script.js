@@ -349,6 +349,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   weightInp.value = "65";
 
   /* ---------- 4. Funkcje pomocnicze ---------- */
+  function shiftDateInput (input, days) {
+    const value = input.value || today;
+    const parts = value.split("-").map(Number);
+    if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return;
+
+    const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    date.setUTCDate(date.getUTCDate() + days);
+    input.value = date.toISOString().slice(0, 10);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
   const currentBag = () =>
     nutritSel.value === "obwodowe"
       ? `${productSel.value} Peripheral`
@@ -634,6 +645,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       el.addEventListener("input", refreshValidationWarnings);
     }
   });
+  $("dateToMinus")?.addEventListener("click", () => shiftDateInput($("dateTo"), -1));
+  $("dateToPlus")?.addEventListener("click", () => shiftDateInput($("dateTo"), 1));
   importInp?.addEventListener("change", event => importRecipeFile(event.target.files[0]));
 
   renderBagOptions();          // początkowe

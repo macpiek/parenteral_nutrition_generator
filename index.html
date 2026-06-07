@@ -43,7 +43,11 @@
         </div>
         <div class="form-group">
           <label for="dateTo">Data podania</label>
-          <input type="date" id="dateTo">
+          <div class="date-stepper">
+            <button type="button" id="dateToMinus" aria-label="Odejmij jeden dzień od daty podania">-</button>
+            <input type="date" id="dateTo">
+            <button type="button" id="dateToPlus" aria-label="Dodaj jeden dzień do daty podania">+</button>
+          </div>
         </div>
 
         <div class="form-group inline">
