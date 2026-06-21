@@ -163,9 +163,10 @@ test('calculateRequirements returns clinical daily ranges based on weight', () =
   });
 });
 
-test('validatePesel validates checksum', () => {
+test('validatePesel validates checksum and encoded birth date', () => {
   assert.equal(calc.validatePesel('44051401458'), true);
   assert.equal(calc.validatePesel('44051401459'), false);
+  assert.equal(calc.validatePesel('99023112340'), false);
 });
 
 test('validateRecipe blocks invalid clinical and production inputs', () => {
@@ -222,6 +223,25 @@ test('validateRecipe still catches malformed PESEL when provided', () => {
 
   assert.equal(result.valid, false);
   assert.match(result.errors.join('\n'), /PESEL/);
+});
+
+test('validateRecipe warns when selected bag volume exceeds weight-based maximum', () => {
+  const result = calc.validateRecipe({
+    cfg,
+    productType: 'SmofKabiven',
+    nutritionType: 'obwodowe',
+    bag: 'SmofKabiven Peripheral',
+    volume: 1206,
+    weight: 30,
+    name: 'Jan Testowy',
+    pesel: '44051401458',
+    dateFrom: '2026-06-05',
+    dateTo: '2026-06-05',
+    additivesById: {}
+  });
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors.join('\n'), /Objętość worka \(1206 ml\) przekracza maksymalną wartość 1200 ml\/dobę/);
 });
 
 test('validateRecipe catches exceeded potassium bag limit', () => {
@@ -311,6 +331,12 @@ test('patient electrolyte inline fields use compact sizing', () => {
   assert.match(styleCss, /\.form-group\.inline \.unit\{[\s\S]*font-size:0\.9rem;/);
 });
 
+test('page keeps wide three-panel layout horizontally scrollable on narrow viewports', () => {
+  assert.match(styleCss, /html\{[\s\S]*overflow-x:auto;[\s\S]*\}/);
+  assert.match(styleCss, /body\{[\s\S]*min-width:max-content;[\s\S]*\}/);
+  assert.match(indexHtml, /<link rel="stylesheet" href="style\.css\?v=20260621-4">/);
+});
+
 test('application starts with default patient weight of 65 kg', () => {
   assert.match(scriptJs, /weightInp\.value\s*=\s*"65"/);
 });
@@ -324,10 +350,12 @@ test('form uses the application validation panel instead of native browser bubbl
   assert.match(indexHtml, /<form[^>]*id="daneForm"[^>]*novalidate/);
 });
 
-test('submit shows validation warnings without blocking recipe generation', () => {
+test('submit asks for confirmation before generating with warnings', () => {
   assert.match(scriptJs, /const validation = refreshValidationWarnings\(\);/);
-  assert.match(scriptJs, /if \(result && validation\.errors\.length\) \{[\s\S]*showValidationWarnings\(validation\.errors, \{ showPanel: true \}\);/);
-  assert.doesNotMatch(scriptJs, /if\s*\(!validation\.valid\)\s*{[\s\S]*?return;[\s\S]*?}/);
+  assert.match(scriptJs, /if \(validation\.errors\.length\) \{[\s\S]*showValidationWarnings\(validation\.errors, \{ showPanel: true \}\);/);
+  assert.match(scriptJs, /const shouldGenerateWithWarnings = window\.confirm\(/);
+  assert.match(scriptJs, /Recepta zawiera ostrzeżenia\. Czy na pewno chcesz wygenerować receptę\?/);
+  assert.match(scriptJs, /if \(!shouldGenerateWithWarnings\) return;/);
 });
 
 test('generation warning panel is shown below the download button', () => {
@@ -343,12 +371,121 @@ test('validation warnings refresh while editing recipe fields', () => {
   assert.match(scriptJs, /function refreshValidationWarnings/);
   assert.match(scriptJs, /\["fullname", "pesel", "dateFrom", "dateTo", \.\.\.additiveInputIds\]\.forEach/);
   assert.match(scriptJs, /weightInp \.addEventListener\("input"[\s\S]*refreshValidationWarnings\(\);/);
+  assert.match(scriptJs, /const normalizedMessage = message\.toLowerCase\(\);/);
+  assert.match(scriptJs, /normalizedMessage\.includes\("objętość worka"\)/);
+});
+
+test('additive warnings are shown below the whole ingredient row', () => {
+  assert.match(scriptJs, /const tableRow = field\.closest\("\.extras-table tr"\);/);
+  assert.match(scriptJs, /const inputCell = field\.closest\("td\.input"\);/);
+  assert.match(scriptJs, /warningRow\.className = "field-warning ingredient-warning-row";/);
+  assert.match(scriptJs, /warningCell\.colSpan = tableRow\.cells\.length;/);
+  assert.match(scriptJs, /tableRow\.after\(warningRow\);/);
+  assert.match(styleCss, /\.extras-table tr\.ingredient-warning-row td\{[\s\S]*border-top:none;[\s\S]*\}/);
+});
+
+test('bag selector warnings are shown below the whole selector row', () => {
+  assert.match(scriptJs, /const bagSelectRow = field\.closest\("\.bag-select-row"\);/);
+  assert.match(scriptJs, /warning\.className = "field-warning bag-row-warning";/);
+  assert.match(scriptJs, /bagSelectRow\.after\(warning\);/);
+  assert.match(styleCss, /\.bag-row-warning\{[\s\S]*width:100%;[\s\S]*\}/);
+});
+
+test('field warnings are inserted before patient form dividers', () => {
+  assert.match(indexHtml, /id="pesel"[\s\S]*<hr class="divider">/);
+  assert.match(scriptJs, /field\.nextElementSibling\?\.classList\.contains\("divider"\)/);
+  assert.match(scriptJs, /container\.insertBefore\(warning, field\.nextElementSibling\);/);
+});
+
+test('field warnings include an exclamation icon', () => {
+  assert.match(scriptJs, /function createWarningContent \(message\)/);
+  assert.match(scriptJs, /icon\.className = "field-warning-icon";/);
+  assert.match(scriptJs, /icon\.textContent = "!";/);
+  assert.match(scriptJs, /warning\.appendChild\(createWarningContent\(message\)\);/);
+  assert.match(styleCss, /\.field-warning-icon\{[\s\S]*border:1px solid currentColor;[\s\S]*border-radius:50%;[\s\S]*\}/);
+  assert.match(styleCss, /\.field-warning-content \+ \.field-warning-content\{[\s\S]*margin-top:0\.35rem;/);
+});
+
+test('additive inputs use package-size stepper buttons', () => {
+  assert.equal(cfg.additiveConfig.add1.stepSize, 20);
+  assert.equal(cfg.additiveConfig.add3.stepSize, 1);
+  assert.equal(cfg.additiveConfig.add6.stepSize, 50);
+  assert.equal(cfg.additiveConfig.add10.stepSize, 10);
+  assert.equal(cfg.additiveConfig.add15.stepSize, 2);
+  assert.equal(cfg.additiveConfig.add16.stepSize, 5);
+  assert.match(scriptJs, /function setupAdditiveSteppers \(\)/);
+  assert.match(scriptJs, /const step = Number\(additive\?\.stepSize\);/);
+  assert.match(scriptJs, /button\.textContent = direction > 0 \? "▲" : "▼";/);
+  assert.match(scriptJs, /button\.addEventListener\("click", \(\) => adjustAdditiveByStep\(input, direction\)\);/);
+  assert.match(scriptJs, /input\.dispatchEvent\(new Event\("input", \{ bubbles: true \}\)\);/);
+  assert.match(scriptJs, /setupAdditiveSteppers\(\);/);
+  assert.match(styleCss, /\.additive-stepper\{[\s\S]*grid-template-columns:minmax\(0,1fr\) 1\.35rem;/);
+  assert.match(styleCss, /\.additive-stepper-button\{[\s\S]*width:1\.35rem;[\s\S]*height:1\.15rem;/);
 });
 
 test('recipe import maps template date cells to the correct form fields', () => {
   assert.match(scriptJs, /C8 = Data podania, C9 = Data wystawienia/);
-  assert.match(scriptJs, /\$\("dateTo"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C8"\)\);/);
-  assert.match(scriptJs, /\$\("dateFrom"\)\.value = toDateInputValue\(getCellPlainValue\(ws, "C9"\)\);/);
+  assert.match(scriptJs, /const importedDateTo = toDateInputValue\(getCellPlainValue\(ws, "C8"\)\);/);
+  assert.match(scriptJs, /const importedDateFrom = toDateInputValue\(getCellPlainValue\(ws, "C9"\)\);/);
+  assert.match(scriptJs, /\$\("dateTo"\)\.value = importedDateTo;/);
+  assert.match(scriptJs, /\$\("dateFrom"\)\.value = importedDateFrom;/);
+});
+
+test('recipe import shows previous mixture parameters for comparison', () => {
+  assert.match(indexHtml, /<th class="imported-recipe-col" hidden>We wgranej recepcie<\/th>/);
+  [
+    'importedBagCalories',
+    'importedTotalMixtureVolume',
+    'importedNaTotal',
+    'importedKTotal',
+    'importedCaTotal',
+    'importedPhosphateTotal',
+    'importedMgTotal',
+    'importedClTotal',
+    'importedAminoAcidsTotal',
+    'importedCarbohydratesTotal',
+    'importedFatTotal'
+  ].forEach(id => assert.match(indexHtml, new RegExp(`id="${id}"`)));
+  assert.match(scriptJs, /const importedMixtureParamSpans = \{/);
+  assert.match(scriptJs, /function calculateMixtureParameterValues \(\{ bag, volume, additives \}\)/);
+  assert.match(scriptJs, /function showImportedMixtureComparison \(\{ bag, volume, additives \}\)/);
+  assert.match(scriptJs, /document\.querySelectorAll\("\.imported-recipe-col"\)\.forEach/);
+  assert.match(scriptJs, /document\.querySelector\("\.mix-params"\)\?\.classList\.add\("has-imported-comparison"\);/);
+  assert.match(styleCss, /\.wrapper > \.container\.mix-params\.has-imported-comparison\{[\s\S]*max-width:42rem;/);
+  assert.match(styleCss, /\.mix-params\.has-imported-comparison \.mix-params-table\{[\s\S]*max-width:none;/);
+  assert.match(scriptJs, /showImportedMixtureComparison\(\{[\s\S]*bag: importedBag\.bag,[\s\S]*volume: importedBag\.vol,[\s\S]*additives[\s\S]*\}\);/);
+});
+
+test('recipe import asks before replacing old issue and administration dates with today', () => {
+  assert.match(scriptJs, /function confirmTodayForImportedDates \(importedDateFrom\)/);
+  assert.match(scriptJs, /importedDateFrom === currentToday/);
+  assert.match(scriptJs, /window\.confirm\(/);
+  assert.match(scriptJs, /Czy ustawić datę wystawienia i datę podania na dzisiaj\?/);
+  assert.match(scriptJs, /\$\("dateFrom"\)\.value = currentToday;/);
+  assert.match(scriptJs, /\$\("dateTo"\)\.value = currentToday;/);
+  assert.match(scriptJs, /confirmTodayForImportedDates\(importedDateFrom\);/);
+});
+
+test('weekend administration date change asks before removing Omegaven from the recipe', () => {
+  assert.match(scriptJs, /function isWeekendDateInput \(value\)/);
+  assert.match(scriptJs, /weekDay === 0 \|\| weekDay === 6/);
+  assert.match(scriptJs, /function confirmRemoveOmegavenAfterDateChange \(\)/);
+  assert.match(scriptJs, /if \(isImportingRecipe \|\| !getWeekendOmegavenWarning\(\)\) return;/);
+  assert.match(scriptJs, /Czy usunąć Omegaven z recepty, ponieważ jest to recepta weekendowa\?/);
+  assert.match(scriptJs, /omegavenInp\.value = "";/);
+  assert.match(scriptJs, /\$\("dateTo"\)\?\.addEventListener\("input", confirmRemoveOmegavenAfterDateChange\);/);
+  assert.doesNotMatch(scriptJs, /\$\("add8"\)\?\.addEventListener\("input", confirmRemoveOmegavenAfterDateChange\);/);
+  assert.doesNotMatch(scriptJs, /isImportingRecipe = false;\s+confirmRemoveOmegavenAfterDateChange\(\);/);
+});
+
+test('weekend Omegaven after import or manual entry is shown as a field warning', () => {
+  assert.match(scriptJs, /function getWeekendOmegavenWarning \(\)/);
+  assert.match(scriptJs, /parseNum\(\$\("add8"\)\?\.value\)/);
+  assert.match(scriptJs, /return "Recepta weekendowa: Omegaven jest dodany do worka\.";/);
+  assert.match(scriptJs, /const weekendOmegavenWarning = getWeekendOmegavenWarning\(\);/);
+  assert.match(scriptJs, /if \(weekendOmegavenWarning\) errors\.push\(weekendOmegavenWarning\);/);
+  assert.match(scriptJs, /\["fullname", "pesel", "dateFrom", "dateTo", \.\.\.additiveInputIds\]\.forEach/);
+  assert.match(scriptJs, /refreshValidationWarnings\(\);[\s\S]*const fileName = file\.name/);
 });
 
 test('application does not persist form data in browser storage', () => {
@@ -374,7 +511,8 @@ test('application footer shows author and loads main branch version date automat
   assert.match(indexHtml, /<footer class="app-footer"[^>]*>/);
   assert.match(indexHtml, /Autor: Maciej Piekarski/);
   assert.match(indexHtml, /Wersja: <span id="appVersion">ładowanie\.\.\.<\/span>/);
-  assert.match(indexHtml, /<script src="script\.js\?v=20260607-2" defer><\/script>/);
+  assert.match(indexHtml, /<script src="pnCalculator\.js\?v=20260621-2" defer><\/script>/);
+  assert.match(indexHtml, /<script src="script\.js\?v=20260621-7" defer><\/script>/);
   assert.equal(cfg.versionConfig.githubRepository, 'macpiek/parenteral_nutrition_generator');
   assert.equal(cfg.versionConfig.branch, 'main');
   assert.match(scriptJs, /api\.github\.com\/repos/);
@@ -393,6 +531,7 @@ test('mixture parameters table includes extended composition rows and total volu
     'carbohydratesTotal',
     'fatTotal'
   ].forEach(id => assert.match(indexHtml, new RegExp(`id="${id}"`)));
+  assert.match(styleCss, /\.mix-params-table td:not\(:first-child\)\{[\s\S]*text-align:right;/);
 });
 
 test('generateRecipeXlsx fills template cells and print area', async () => {

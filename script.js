@@ -86,6 +86,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
   }
 
+  function toLocalDateInputValue (date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   async function updateVersionFooter (versionConfig = {}) {
     const versionEl = $("appVersion");
     if (!versionEl) return;
@@ -123,6 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function targetForWarning (message) {
+    const normalizedMessage = message.toLowerCase();
     const additiveLabels = {
       "Dipeptiven": "add6",
       "Omegaven": "add8",
@@ -139,7 +147,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (message.includes("Data wystawienia")) return "dateFrom";
     if (message.includes("Masa ciała")) return "weight";
     if (message.includes("typ worka")) return "productType";
-    if (message.includes("objętość worka")) return "bagVolume";
+    if (normalizedMessage.includes("objętość worka")) return "bagVolume";
     if (message.includes("Sód w mieszaninie")) return "add17";
     if (message.includes("Potas w mieszaninie")) return "add10";
     for (const [label, id] of Object.entries(additiveLabels)) {
@@ -148,16 +156,72 @@ document.addEventListener("DOMContentLoaded", async () => {
     return null;
   }
 
+  function createWarningContent (message) {
+    const warning = document.createElement("div");
+    const icon = document.createElement("span");
+    const text = document.createElement("span");
+
+    warning.className = "field-warning-content";
+    icon.className = "field-warning-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "!";
+    text.textContent = message;
+
+    warning.appendChild(icon);
+    warning.appendChild(text);
+    return warning;
+  }
+
   function addFieldWarning (fieldId, message) {
     const field = $(fieldId);
     if (!field) return false;
     field.classList.add("input-warning");
+
+    const bagSelectRow = field.closest(".bag-select-row");
+    if (bagSelectRow) {
+      const nextElement = bagSelectRow.nextElementSibling;
+      const warning = nextElement?.classList.contains("bag-row-warning")
+        ? nextElement
+        : document.createElement("div");
+
+      if (!warning.classList.contains("bag-row-warning")) {
+        warning.className = "field-warning bag-row-warning";
+        bagSelectRow.after(warning);
+      }
+
+      warning.appendChild(createWarningContent(message));
+      return true;
+    }
+
+    const tableRow = field.closest(".extras-table tr");
+    const inputCell = field.closest("td.input");
+    if (tableRow && inputCell) {
+      const nextRow = tableRow.nextElementSibling;
+      const warningRow = nextRow?.classList.contains("ingredient-warning-row")
+        ? nextRow
+        : document.createElement("tr");
+      const warningCell = warningRow.firstElementChild || document.createElement("td");
+
+      if (!warningRow.classList.contains("ingredient-warning-row")) {
+        warningRow.className = "field-warning ingredient-warning-row";
+        warningCell.colSpan = tableRow.cells.length;
+        warningRow.appendChild(warningCell);
+        tableRow.after(warningRow);
+      }
+
+      warningCell.appendChild(createWarningContent(message));
+      return true;
+    }
+
     const warning = document.createElement("div");
     warning.className = "field-warning";
-    warning.textContent = message;
-
+    warning.appendChild(createWarningContent(message));
     const container = field.closest(".form-group") || field.closest("td") || field.parentElement;
     if (!container) return false;
+    if (field.nextElementSibling?.classList.contains("divider")) {
+      container.insertBefore(warning, field.nextElementSibling);
+      return true;
+    }
     container.appendChild(warning);
     return true;
   }
@@ -213,6 +277,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const volSel     = $("bagVolume");
   const importInp  = $("recipeImport");
   const importStatus = $("importStatus");
+  let isImportingRecipe = false;
 
   const {
     parseNumber: parseNum,
@@ -255,6 +320,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   const aminoAcidsTotal = $("aminoAcidsTotal");
   const carbohydratesTotal = $("carbohydratesTotal");
   const fatTotal = $("fatTotal");
+  const importedMixtureParamSpans = {
+    calories: $("importedBagCalories"),
+    volume: $("importedTotalMixtureVolume"),
+    sodium: $("importedNaTotal"),
+    potassium: $("importedKTotal"),
+    Ca: $("importedCaTotal"),
+    phosphate: $("importedPhosphateTotal"),
+    Mg: $("importedMgTotal"),
+    Cl: $("importedClTotal"),
+    aminoAcids: $("importedAminoAcidsTotal"),
+    carbohydrates: $("importedCarbohydratesTotal"),
+    fat: $("importedFatTotal")
+  };
   const naReqMin = $("naReqMin");
   const naReqMax = $("naReqMax");
   const kReqMin  = $("kReqMin");
@@ -265,6 +343,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   const readAdditiveValues = () => Object.fromEntries(
     additiveInputIds.map(id => [id, $(id)?.value || ""])
   );
+
+  function formatAdditiveStepperValue (value) {
+    const rounded = Math.round(value * 1000) / 1000;
+    return Number.isInteger(rounded)
+      ? String(rounded)
+      : String(rounded).replace(".", ",");
+  }
+
+  function adjustAdditiveByStep (input, direction) {
+    const additive = cfg.additiveConfig?.[input.id];
+    const step = Number(additive?.stepSize);
+    if (!Number.isFinite(step) || step <= 0) return;
+
+    const current = parseNum(input.value);
+    const base = Number.isFinite(current) ? current : 0;
+    const next = Math.max(0, base + (direction * step));
+    input.value = next > 0 ? formatAdditiveStepperValue(next) : "";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function setupAdditiveSteppers () {
+    additiveInputIds.forEach(id => {
+      const input = $(id);
+      const additive = cfg.additiveConfig?.[id];
+      const step = Number(additive?.stepSize);
+      if (!input || !Number.isFinite(step) || step <= 0 || input.closest(".additive-stepper")) return;
+
+      const wrapper = document.createElement("div");
+      const controls = document.createElement("div");
+      wrapper.className = "additive-stepper";
+      controls.className = "additive-stepper-controls";
+
+      [1, -1].forEach(direction => {
+        const button = document.createElement("button");
+        const action = direction > 0 ? "Zwiększ" : "Zmniejsz";
+        button.type = "button";
+        button.className = "additive-stepper-button";
+        button.textContent = direction > 0 ? "▲" : "▼";
+        button.setAttribute("aria-label", `${action} ${additive.name} o ${formatAdditiveStepperValue(step)} ${additive.unit}`);
+        button.title = `${action} o ${formatAdditiveStepperValue(step)} ${additive.unit}`;
+        button.addEventListener("click", () => adjustAdditiveByStep(input, direction));
+        controls.appendChild(button);
+      });
+
+      input.before(wrapper);
+      wrapper.appendChild(input);
+      wrapper.appendChild(controls);
+    });
+  }
 
   const updateKcal = () => {
     const total = calculateTotalKcal({
@@ -306,8 +433,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function refreshValidationWarnings (options = {}) {
     const validation = validateRecipe(collectValidationData());
-    showValidationWarnings(validation.errors, options);
-    return validation;
+    const errors = [...validation.errors];
+    const weekendOmegavenWarning = getWeekendOmegavenWarning();
+    if (weekendOmegavenWarning) errors.push(weekendOmegavenWarning);
+
+    showValidationWarnings(errors, options);
+    return {
+      ...validation,
+      valid: validation.valid && errors.length === 0,
+      errors
+    };
   }
 
 
@@ -341,9 +476,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const el = $(id);
     if (el) el.addEventListener("input", updateTotalVolume);
   });
+  setupAdditiveSteppers();
 
   /* ---------- 3. Inicjalizacja dat ---------- */
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateInputValue();
   $("dateFrom").value = today;
   $("dateTo").value   = today;
   weightInp.value = "65";
@@ -384,7 +520,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function toInputValue (value) {
     if (value === null || value === undefined) return "";
-    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (value instanceof Date) return toLocalDateInputValue(value);
     return String(value).trim();
   }
 
@@ -397,7 +533,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function toDateInputValue (value) {
     if (value === null || value === undefined || value === "") return "";
-    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    if (value instanceof Date) return toLocalDateInputValue(value);
     if (typeof value === "number") return excelSerialToDateInput(value);
     const text = String(value).trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
@@ -405,11 +541,68 @@ document.addEventListener("DOMContentLoaded", async () => {
     return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString().slice(0, 10);
   }
 
+  function isWeekendDateInput (value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+    if (!match) return false;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return false;
+
+    const weekDay = date.getDay();
+    return weekDay === 0 || weekDay === 6;
+  }
+
+  function getWeekendOmegavenWarning () {
+    if (!isWeekendDateInput($("dateTo")?.value)) return "";
+
+    const omegaven = parseNum($("add8")?.value);
+    if (!Number.isFinite(omegaven) || omegaven === 0) return "";
+
+    return "Recepta weekendowa: Omegaven jest dodany do worka.";
+  }
+
   function setAdditiveValue (id, value) {
     const el = $(id);
     if (!el) return;
     el.value = value === 0 ? "" : toInputValue(value);
     manualAdditives.add(id);
+  }
+
+  function confirmTodayForImportedDates (importedDateFrom) {
+    const currentToday = toLocalDateInputValue();
+    if (!importedDateFrom || importedDateFrom === currentToday) return;
+
+    const shouldSetToday = window.confirm(
+      "Data wystawienia we wczytywanym pliku jest inna niż dzisiejsza. Czy ustawić datę wystawienia i datę podania na dzisiaj?"
+    );
+
+    if (!shouldSetToday) return;
+
+    $("dateFrom").value = currentToday;
+    $("dateTo").value = currentToday;
+    $("dateFrom").dispatchEvent(new Event("input", { bubbles: true }));
+    $("dateTo").dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function confirmRemoveOmegavenAfterDateChange () {
+    if (isImportingRecipe || !getWeekendOmegavenWarning()) return;
+
+    const omegavenInp = $("add8");
+    const shouldRemoveOmegaven = window.confirm(
+      "Data podania przypada w sobotę lub niedzielę, a Omegaven jest dodany do worka. Czy usunąć Omegaven z recepty, ponieważ jest to recepta weekendowa?"
+    );
+
+    if (!shouldRemoveOmegaven) return;
+
+    omegavenInp.value = "";
+    omegavenInp.dispatchEvent(new Event("input", { bubbles: true }));
+    updateKcal();
+    updateTotalVolume();
+    updateElectrolyteSummary();
+    refreshValidationWarnings();
   }
 
   function chooseImportedBag (ws) {
@@ -458,6 +651,51 @@ document.addEventListener("DOMContentLoaded", async () => {
     return additives;
   }
 
+  function calculateMixtureParameterValues ({ bag, volume, additives }) {
+    const mixtureSummary = calculateMixtureSummary({
+      mixtureCompositionConfig: cfg.mixtureCompositionConfig,
+      additiveConfig: cfg.additiveConfig,
+      bag,
+      volume,
+      additives
+    });
+    const electrolyteSummary = calculateElectrolyteSummary({
+      electrolyteConfig: cfg.electrolyteConfig,
+      additiveElectrolyteConfig: cfg.additiveElectrolyteConfig,
+      additiveConfig: cfg.additiveConfig,
+      mixtureCompositionConfig: cfg.mixtureCompositionConfig,
+      bag,
+      volume,
+      additives
+    });
+
+    return {
+      calories: calculateTotalKcal({ bagConfig, bag, volume, additives, additiveConfig: cfg.additiveConfig }),
+      volume: calculateTotalVolume({ bagConfig, bag, volume, additives, additiveConfig: cfg.additiveConfig }),
+      sodium: electrolyteSummary.sodium,
+      potassium: electrolyteSummary.potassium,
+      Ca: mixtureSummary.Ca,
+      phosphate: mixtureSummary.phosphate,
+      Mg: mixtureSummary.Mg,
+      Cl: mixtureSummary.Cl,
+      aminoAcids: mixtureSummary.aminoAcids,
+      carbohydrates: mixtureSummary.carbohydrates,
+      fat: mixtureSummary.fat
+    };
+  }
+
+  function showImportedMixtureComparison ({ bag, volume, additives }) {
+    const values = calculateMixtureParameterValues({ bag, volume, additives });
+
+    Object.entries(importedMixtureParamSpans).forEach(([key, el]) => {
+      if (el) el.textContent = values[key] || values[key] === 0 ? values[key] : "–";
+    });
+    document.querySelectorAll(".imported-recipe-col").forEach(el => {
+      el.hidden = false;
+    });
+    document.querySelector(".mix-params")?.classList.add("has-imported-comparison");
+  }
+
   async function importRecipeFile (file) {
     if (!file) return;
     if (!window.ExcelJS) {
@@ -466,6 +704,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     showImportStatus("Wczytywanie recepty...", "info");
+    isImportingRecipe = true;
 
     try {
       const wb = new ExcelJS.Workbook();
@@ -477,8 +716,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       $("pesel").value = toInputValue(getCellPlainValue(ws, "C6"));
       weightInp.value = toInputValue(getCellPlainValue(ws, "C7"));
       // Template: C8 = Data podania, C9 = Data wystawienia.
-      $("dateTo").value = toDateInputValue(getCellPlainValue(ws, "C8"));
-      $("dateFrom").value = toDateInputValue(getCellPlainValue(ws, "C9"));
+      const importedDateTo = toDateInputValue(getCellPlainValue(ws, "C8"));
+      const importedDateFrom = toDateInputValue(getCellPlainValue(ws, "C9"));
+      $("dateTo").value = importedDateTo;
+      $("dateFrom").value = importedDateFrom;
+      confirmTodayForImportedDates(importedDateFrom);
 
       manualAdditives.clear();
       const importedBag = chooseImportedBag(ws);
@@ -490,7 +732,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       for (const id of additiveInputIds) {
         setAdditiveValue(id, additives[id]);
       }
+      if (importedBag) {
+        showImportedMixtureComparison({
+          bag: importedBag.bag,
+          volume: importedBag.vol,
+          additives
+        });
+      }
 
+      isImportingRecipe = false;
       updateKcal();
       updateDosage();
       updateAdditiveRanges();
@@ -503,6 +753,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.error(err);
       showImportStatus("Nie udało się wczytać recepty. Wybierz plik XLSX wygenerowany w tym programie.", "error");
     } finally {
+      isImportingRecipe = false;
       importInp.value = "";
     }
   }
@@ -645,6 +896,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       el.addEventListener("input", refreshValidationWarnings);
     }
   });
+  $("dateTo")?.addEventListener("input", confirmRemoveOmegavenAfterDateChange);
   $("dateToMinus")?.addEventListener("click", () => shiftDateInput($("dateTo"), -1));
   $("dateToPlus")?.addEventListener("click", () => shiftDateInput($("dateTo"), 1));
   importInp?.addEventListener("change", event => importRecipeFile(event.target.files[0]));
@@ -659,6 +911,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearAppMessage();
     clearGenerationMessage();
     const validation = refreshValidationWarnings();
+    if (validation.errors.length) {
+      showValidationWarnings(validation.errors, { showPanel: true });
+      const shouldGenerateWithWarnings = window.confirm(
+        "Recepta zawiera ostrzeżenia. Czy na pewno chcesz wygenerować receptę?"
+      );
+      if (!shouldGenerateWithWarnings) return;
+    }
 
     /* pobierz wartości dodatków */
     const getAdd = i => {
@@ -697,16 +956,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const central = nutritSel.value === "centralne";
 
     /* wywołaj zewnętrzny generator */
-    const result = await generateRecipeXlsx({
+    await generateRecipeXlsx({
       data,
       currentBag: currentBag(),
       central,
       cfg,        // przekazujemy pełny konfig, bo tam są wszystkie stałe
       onError: message => showAppMessage("error", "Nie udało się wygenerować recepty", message)
     });
-
-    if (result && validation.errors.length) {
-      showValidationWarnings(validation.errors, { showPanel: true });
-    }
   });
 });

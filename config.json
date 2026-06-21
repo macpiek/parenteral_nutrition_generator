@@ -77,20 +77,20 @@
     },
 
     "additiveConfig": {
-      "add1":  { "name": "Glycophos", "unit": "ml", "compositionPerMl": { "Na": 2, "phosphate": 1 } },
-      "add2":  { "name": "Addamel N", "unit": "ml" },
-      "add3":  { "name": "Soluvit N", "unit": "fiol." },
-      "add4":  { "name": "Vitalipid N Adult", "unit": "ml" },
-      "add5":  { "name": "Vitalipid N Infant", "unit": "ml" },
-      "add6":  { "name": "Dipeptiven", "unit": "ml", "energyKcalPerMl": 0.8,  "compositionPerMl": { "aminoAcids": 0.2 } },
-      "add8":  { "name": "Omegaven", "unit": "ml", "energyKcalPerMl": 1.12, "compositionPerMl": { "fat": 0.1 } },
-      "add10": { "name": "KCl 15%", "unit": "ml", "compositionPerMl": { "K": 2, "Cl": 2 } },
-      "add12": { "name": "Calcium chloratum 10%", "unit": "ml", "compositionPerMl": { "Ca": 0.46, "Cl": 0.92 } },
-      "add13": { "name": "Calcium glubionas 10%", "unit": "ml", "compositionPerMl": { "Ca": 0.23 } },
-      "add14": { "name": "Magnesi sulf. 20%", "unit": "ml", "compositionPerMl": { "Mg": 0.81 } },
-      "add15": { "name": "Vit. B1", "unit": "ml" },
-      "add16": { "name": "Vit. C", "unit": "ml" },
-      "add17": { "name": "NaCl 0,9%", "unit": "ml", "compositionPerMl": { "Na": 1.54, "Cl": 1.54 } }
+      "add1":  { "name": "Glycophos", "unit": "ml", "stepSize": 20, "compositionPerMl": { "Na": 2, "phosphate": 1 } },
+      "add2":  { "name": "Addamel N", "unit": "ml", "stepSize": 10 },
+      "add3":  { "name": "Soluvit N", "unit": "fiol.", "stepSize": 1 },
+      "add4":  { "name": "Vitalipid N Adult", "unit": "ml", "stepSize": 10 },
+      "add5":  { "name": "Vitalipid N Infant", "unit": "ml", "stepSize": 10 },
+      "add6":  { "name": "Dipeptiven", "unit": "ml", "stepSize": 50, "energyKcalPerMl": 0.8,  "compositionPerMl": { "aminoAcids": 0.2 } },
+      "add8":  { "name": "Omegaven", "unit": "ml", "stepSize": 50, "energyKcalPerMl": 1.12, "compositionPerMl": { "fat": 0.1 } },
+      "add10": { "name": "KCl 15%", "unit": "ml", "stepSize": 10, "compositionPerMl": { "K": 2, "Cl": 2 } },
+      "add12": { "name": "Calcium chloratum 10%", "unit": "ml", "stepSize": 10, "compositionPerMl": { "Ca": 0.46, "Cl": 0.92 } },
+      "add13": { "name": "Calcium glubionas 10%", "unit": "ml", "stepSize": 10, "compositionPerMl": { "Ca": 0.23 } },
+      "add14": { "name": "Magnesi sulf. 20%", "unit": "ml", "stepSize": 10, "compositionPerMl": { "Mg": 0.81 } },
+      "add15": { "name": "Vit. B1", "unit": "ml", "stepSize": 2 },
+      "add16": { "name": "Vit. C", "unit": "ml", "stepSize": 5 },
+      "add17": { "name": "NaCl 0,9%", "unit": "ml", "stepSize": 10, "compositionPerMl": { "Na": 1.54, "Cl": 1.54 } }
     },
 
 

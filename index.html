@@ -10,12 +10,12 @@
   <!-- FileSaver do pobierania pliku -->
   <script src="vendor/file-saver/FileSaver.min.js"></script>
 
-  <script src="pnCalculator.js?v=20260606-2" defer></script>
-  <script src="script.js?v=20260607-2" defer></script>
+  <script src="pnCalculator.js?v=20260621-2" defer></script>
+  <script src="script.js?v=20260621-7" defer></script>
   <script src="xlsxGenerator.js?v=20260606-2" defer></script>
 
   <!-- Główny arkusz stylów -->
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260621-4">
 </head>
 <body>
   <div class="wrapper">
@@ -215,6 +215,7 @@
           <tr>
             <th>Parametr</th>
             <th>W mieszaninie</th>
+            <th class="imported-recipe-col" hidden>We wgranej recepcie</th>
             <th>Maks. w worku</th>
             <th>Zapotrzebowanie dobowe</th>
           </tr>
@@ -223,66 +224,77 @@
           <tr>
             <td>Kalorie (łącznie)</td>
             <td><span id="bagCalories"></span> kcal</td>
+            <td class="imported-recipe-col" hidden><span id="importedBagCalories">–</span> kcal</td>
             <td>&ndash;</td>
             <td><span id="calReqMin">0</span> - <span id="calReqMax">0</span> kcal</td>
           </tr>
           <tr>
             <td>Objętość (łącznie)</td>
             <td><span id="totalMixtureVolume"></span> ml</td>
+            <td class="imported-recipe-col" hidden><span id="importedTotalMixtureVolume">–</span> ml</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Sód</td>
             <td><span id="naTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedNaTotal">–</span> mmol</td>
             <td><span id="naMax">0</span> mmol</td>
             <td><span id="naReqMin">0</span> - <span id="naReqMax">0</span> mmol</td>
           </tr>
           <tr>
             <td>Potas</td>
             <td><span id="kTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedKTotal">–</span> mmol</td>
             <td><span id="kMax">0</span> mmol</td>
             <td><span id="kReqMin">0</span> - <span id="kReqMax">0</span> mmol</td>
           </tr>
           <tr>
             <td>Wapń</td>
             <td><span id="caTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedCaTotal">–</span> mmol</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Fosforany</td>
             <td><span id="phosphateTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedPhosphateTotal">–</span> mmol</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Magnez</td>
             <td><span id="mgTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedMgTotal">–</span> mmol</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Chlorki</td>
             <td><span id="clTotal">0</span> mmol</td>
+            <td class="imported-recipe-col" hidden><span id="importedClTotal">–</span> mmol</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Białka / aminokwasy</td>
             <td><span id="aminoAcidsTotal">0</span> g</td>
+            <td class="imported-recipe-col" hidden><span id="importedAminoAcidsTotal">–</span> g</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Węglowodany</td>
             <td><span id="carbohydratesTotal">0</span> g</td>
+            <td class="imported-recipe-col" hidden><span id="importedCarbohydratesTotal">–</span> g</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>
           <tr>
             <td>Tłuszcze</td>
             <td><span id="fatTotal">0</span> g</td>
+            <td class="imported-recipe-col" hidden><span id="importedFatTotal">–</span> g</td>
             <td>&ndash;</td>
             <td>&ndash;</td>
           </tr>

@@ -196,6 +196,25 @@
   function validatePesel (pesel) {
     const value = String(pesel || "").trim();
     if (!/^\d{11}$/.test(value)) return false;
+
+    const year = Number(value.slice(0, 2));
+    const encodedMonth = Number(value.slice(2, 4));
+    const day = Number(value.slice(4, 6));
+    const centuryOffsets = [
+      { min: 1, max: 12, yearBase: 1900, monthOffset: 0 },
+      { min: 21, max: 32, yearBase: 2000, monthOffset: 20 },
+      { min: 41, max: 52, yearBase: 2100, monthOffset: 40 },
+      { min: 61, max: 72, yearBase: 2200, monthOffset: 60 },
+      { min: 81, max: 92, yearBase: 1800, monthOffset: 80 }
+    ];
+    const century = centuryOffsets.find(item => encodedMonth >= item.min && encodedMonth <= item.max);
+    if (!century) return false;
+
+    const month = encodedMonth - century.monthOffset;
+    const fullYear = century.yearBase + year;
+    const date = new Date(fullYear, month - 1, day);
+    if (date.getFullYear() !== fullYear || date.getMonth() !== month - 1 || date.getDate() !== day) return false;
+
     const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
     const sum = weights.reduce((acc, weight, index) => acc + (Number(value[index]) * weight), 0);
     return ((10 - (sum % 10)) % 10) === Number(value[10]);
@@ -223,11 +242,12 @@
   function validateRecipe ({ cfg, productType, nutritionType, bag, volume, weight, name, pesel, dateFrom, dateTo, additivesById = {} }) {
     const errors = [];
     const numericWeight = parseNumber(weight);
+    const numericVolume = parseNumber(volume);
     const hasSupportedBag = Boolean(cfg.bagConfig[bag]);
     const hasSupportedVolume = Boolean(getBagInfo(cfg.bagConfig, bag, volume));
     const hasValidWeight = Number.isFinite(numericWeight) && numericWeight > 0;
 
-    if (String(pesel || "").trim() && !validatePesel(pesel)) errors.push("PESEL ma nieprawidłowy format lub sumę kontrolną.");
+    if (String(pesel || "").trim() && !validatePesel(pesel)) errors.push("PESEL jest nieprawidłowy. Sprawdź liczbę cyfr, datę urodzenia i sumę kontrolną.");
     if (dateFrom && dateTo && dateTo < dateFrom) errors.push("Data podania nie może być wcześniejsza niż data wystawienia.");
     if (!hasValidWeight) errors.push("Masa ciała musi być dodatnią liczbą.");
     if (!hasSupportedBag) errors.push("Wybrano nieobsługiwany typ worka.");
@@ -240,6 +260,15 @@
     });
 
     if (hasSupportedBag && hasSupportedVolume && hasValidWeight) {
+      const requirements = calculateRequirements({
+        dosageConfig: cfg.dosageConfig,
+        bag,
+        weight: numericWeight
+      });
+      if (requirements.volume.absoluteMax && numericVolume > requirements.volume.absoluteMax) {
+        errors.push(`Objętość worka (${numericVolume} ml) przekracza maksymalną wartość ${requirements.volume.absoluteMax} ml/dobę dla masy ciała ${numericWeight} kg.`);
+      }
+
       const ranges = calculateAdditiveRanges({
         additiveRangeConfig: cfg.additiveRangeConfig,
         constants: cfg.constants,
