@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (fallbackDate) versionEl.textContent = fallbackDate;
     if (!githubRepository) return;
+    if (window.location.protocol === "file:") return;
 
     const [owner, repo] = githubRepository.split("/");
     if (!owner || !repo) return;
@@ -121,6 +122,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (versionDate) versionEl.textContent = versionDate;
     } catch (err) {
       console.warn("Nie udało się pobrać daty wersji z GitHub API.", err);
+    }
+  }
+
+  async function loadConfig () {
+    const embeddedConfig = window.PN_APP_CONFIG;
+
+    if (window.location.protocol === "file:" && embeddedConfig) {
+      return embeddedConfig;
+    }
+
+    try {
+      const resp = await fetch("config.json", { cache: "no-store" });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      return await resp.json();
+    } catch (err) {
+      if (embeddedConfig) {
+        console.warn("Nie udało się wczytać config.json. Używam konfiguracji wbudowanej.", err);
+        return embeddedConfig;
+      }
+      throw err;
     }
   }
 
@@ -245,9 +266,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   /* ---------- 1. Pobranie konfiguracji ---------- */
   let cfg;
   try {
-    const resp = await fetch("config.json", { cache: "no-store" });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    cfg = await resp.json();
+    cfg = await loadConfig();
   } catch (err) {
     console.error(err);
     showAppMessage("error", "Błąd konfiguracji", "Nie udało się wczytać pliku config.json.");

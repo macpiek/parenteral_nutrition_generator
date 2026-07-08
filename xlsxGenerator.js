@@ -61,6 +61,25 @@ function forceWorkbookRecalculation (workbookXml) {
     : workbookXml.replace("</workbook>", `${calcPrNode}</workbook>`);
 }
 
+function base64ToArrayBuffer (base64) {
+  if (typeof Buffer !== "undefined") {
+    const buffer = Buffer.from(base64, "base64");
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+  }
+
+  const binary = globalThis.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function getEmbeddedTemplateBuffer () {
+  const base64 = globalThis.PN_TEMPLATE_XLSX_BASE64;
+  return base64 ? base64ToArrayBuffer(base64) : null;
+}
+
 async function generateRecipeXlsx ({
     data,
     currentBag,
@@ -85,12 +104,22 @@ async function generateRecipeXlsx ({
     try {
       /* 1. Pobierz szablon XLSX */
       let templateBuffer = workbookBuffer;
+      if (!templateBuffer && globalThis.location?.protocol === "file:") {
+        templateBuffer = getEmbeddedTemplateBuffer();
+      }
+
       if (!templateBuffer) {
-        const resp = await fetchTemplate(TEMPLATE_FILE);
-        if (!resp.ok) {
-          throw new Error("Błąd pobierania szablonu.");
+        try {
+          const resp = await fetchTemplate(TEMPLATE_FILE);
+          if (!resp.ok) {
+            throw new Error("Błąd pobierania szablonu.");
+          }
+          templateBuffer = await resp.arrayBuffer();
+        } catch (err) {
+          templateBuffer = getEmbeddedTemplateBuffer();
+          if (!templateBuffer) throw err;
+          console.warn("Nie udało się pobrać szablonu XLSX. Używam szablonu wbudowanego.", err);
         }
-        templateBuffer = await resp.arrayBuffer();
       }
   
       /* 2. Wczytaj workbook */

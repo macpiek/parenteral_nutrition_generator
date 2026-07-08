@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 const ExcelJS = require('exceljs');
 const JSZip = require('jszip');
 
@@ -11,6 +12,11 @@ const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json')
 const indexHtml = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const scriptJs = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
 const styleCss = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+const embeddedAssetsJs = fs.readFileSync(path.join(__dirname, '..', 'embeddedAssets.js'), 'utf8');
+const standaloneHtmlPath = path.join(__dirname, '..', 'standalone.html');
+const standaloneHtml = fs.existsSync(standaloneHtmlPath)
+  ? fs.readFileSync(standaloneHtmlPath, 'utf8')
+  : '';
 
 test('parseNumber accepts Polish decimal comma and rejects malformed values', () => {
   assert.equal(calc.parseNumber('3,5'), 3.5);
@@ -337,6 +343,51 @@ test('page keeps wide three-panel layout horizontally scrollable on narrow viewp
   assert.match(indexHtml, /<link rel="stylesheet" href="style\.css\?v=20260621-4">/);
 });
 
+test('application includes standalone assets before startup scripts', () => {
+  const embeddedIndex = indexHtml.indexOf('<script src="embeddedAssets.js?v=20260708-1"></script>');
+  const calculatorIndex = indexHtml.indexOf('<script src="pnCalculator.js?v=20260621-2" defer></script>');
+  const appIndex = indexHtml.indexOf('<script src="script.js?v=20260621-7" defer></script>');
+
+  assert.ok(embeddedIndex > -1);
+  assert.ok(calculatorIndex > embeddedIndex);
+  assert.ok(appIndex > embeddedIndex);
+  assert.match(scriptJs, /window\.location\.protocol === "file:" && embeddedConfig/);
+  assert.match(scriptJs, /Używam konfiguracji wbudowanej/);
+});
+
+test('standalone assets embed the current config and XLSX template', () => {
+  const sandbox = {};
+  vm.runInNewContext(embeddedAssetsJs, sandbox);
+
+  assert.deepEqual(JSON.parse(JSON.stringify(sandbox.PN_APP_CONFIG)), cfg);
+  assert.deepEqual(
+    Buffer.from(sandbox.PN_TEMPLATE_XLSX_BASE64, 'base64'),
+    fs.readFileSync(path.join(__dirname, '..', 'szablon.xlsx'))
+  );
+});
+
+test('single-file HTML build inlines the application assets', () => {
+  assert.ok(standaloneHtml.length > 0);
+  [
+    'vendor/jszip/jszip.min.js',
+    'vendor/exceljs/exceljs.min.js',
+    'vendor/file-saver/FileSaver.min.js',
+    'embeddedAssets.js',
+    'pnCalculator.js',
+    'script.js',
+    'xlsxGenerator.js',
+    'style.css'
+  ].forEach(source => {
+    assert.match(standaloneHtml, new RegExp(`data-inline-source="${source.replace(/\//g, '\\/')}"`));
+  });
+
+  const htmlShell = standaloneHtml
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '<script></script>')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '<style></style>');
+  assert.doesNotMatch(htmlShell, /<script src="(?:vendor\/|embeddedAssets\.js|pnCalculator\.js|script\.js|xlsxGenerator\.js)/);
+  assert.doesNotMatch(htmlShell, /<link rel="stylesheet" href="style\.css/);
+});
+
 test('application starts with default patient weight of 65 kg', () => {
   assert.match(scriptJs, /weightInp\.value\s*=\s*"65"/);
 });
@@ -592,4 +643,46 @@ test('generateRecipeXlsx fills template cells and print area', async () => {
   assert.match(workbookXml, /<calcPr[^>]*calcMode="auto"/);
   assert.match(workbookXml, /<calcPr[^>]*fullCalcOnLoad="1"/);
   assert.match(workbookXml, /<calcPr[^>]*forceFullCalc="1"/);
+});
+
+test('generateRecipeXlsx can use embedded template when local fetch is unavailable', async () => {
+  const originalTemplate = globalThis.PN_TEMPLATE_XLSX_BASE64;
+  const originalWarn = console.warn;
+  const additives = Array.from({ length: 17 }, () => '');
+
+  globalThis.PN_TEMPLATE_XLSX_BASE64 = fs.readFileSync(path.join(__dirname, '..', 'szablon.xlsx')).toString('base64');
+  console.warn = () => {};
+
+  try {
+    const result = await generateRecipeXlsx({
+      data: {
+        name: 'Jan Lokalny',
+        pesel: '44051401458',
+        dateFrom: '2026-06-05',
+        dateTo: '2026-06-06',
+        weight: 70,
+        bagVol: 1206,
+        additives
+      },
+      currentBag: 'SmofKabiven Peripheral',
+      central: false,
+      cfg,
+      fetchImpl: async () => {
+        throw new Error('fetch blocked for local file');
+      },
+      ExcelJSImpl: ExcelJS,
+      JSZipImpl: JSZip,
+      returnBuffer: true
+    });
+
+    assert.equal(result.fileName, 'Jan Lokalny SmofKabiven obwodowe.xlsx');
+    assert.ok(Buffer.isBuffer(result.buffer));
+  } finally {
+    console.warn = originalWarn;
+    if (originalTemplate === undefined) {
+      delete globalThis.PN_TEMPLATE_XLSX_BASE64;
+    } else {
+      globalThis.PN_TEMPLATE_XLSX_BASE64 = originalTemplate;
+    }
+  }
 });
