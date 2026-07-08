@@ -741,7 +741,7 @@
   "versionConfig": {
     "githubRepository": "macpiek/parenteral_nutrition_generator",
     "branch": "main",
-    "fallbackDate": "2026-06-07"
+    "fallbackDate": "2026-07-08"
   },
   "constants": {
     "DIPEPTIVEN_PER_KG": 2.5,

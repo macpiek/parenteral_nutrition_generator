@@ -4,55 +4,56 @@ const path = require("node:path");
 const rootDir = path.join(__dirname, "..");
 const outputPath = path.join(rootDir, "standalone.html");
 
-const replacements = [
+const scriptReplacements = [
   {
     pattern: /<script src="vendor\/jszip\/jszip\.min\.js"><\/script>/,
-    type: "script",
-    source: "vendor/jszip/jszip.min.js"
+    source: "vendor/jszip/jszip.min.js",
+    isolateModuleGlobals: true
   },
   {
     pattern: /<script src="vendor\/exceljs\/exceljs\.min\.js"><\/script>/,
-    type: "script",
-    source: "vendor/exceljs/exceljs.min.js"
+    source: "vendor/exceljs/exceljs.min.js",
+    isolateModuleGlobals: true
   },
   {
     pattern: /<script src="vendor\/file-saver\/FileSaver\.min\.js"><\/script>/,
-    type: "script",
-    source: "vendor/file-saver/FileSaver.min.js"
+    source: "vendor/file-saver/FileSaver.min.js",
+    isolateModuleGlobals: true
   },
   {
     pattern: /<script src="embeddedAssets\.js\?v=[^"]+"><\/script>/,
-    type: "script",
     source: "embeddedAssets.js"
   },
   {
     pattern: /<script src="pnCalculator\.js\?v=[^"]+" defer><\/script>/,
-    type: "script",
     source: "pnCalculator.js"
   },
   {
     pattern: /<script src="script\.js\?v=[^"]+" defer><\/script>/,
-    type: "script",
     source: "script.js"
   },
   {
     pattern: /<script src="xlsxGenerator\.js\?v=[^"]+" defer><\/script>/,
-    type: "script",
     source: "xlsxGenerator.js"
-  },
-  {
-    pattern: /<link rel="stylesheet" href="style\.css\?v=[^"]+">/,
-    type: "style",
-    source: "style.css"
   }
 ];
+
+const styleReplacement = {
+  pattern: /<link rel="stylesheet" href="style\.css\?v=[^"]+">/,
+  source: "style.css"
+};
 
 function readSource (filePath) {
   return fs.readFileSync(path.join(rootDir, filePath), "utf8");
 }
 
-function inlineScript (source, content) {
+function inlineScript (source, content, options = {}) {
+  const { isolateModuleGlobals = false } = options;
   const safeContent = content.replace(/<\/script/gi, "<\\/script");
+  if (isolateModuleGlobals) {
+    return `<script data-inline-source="${source}">\n(function () {\n  var module = undefined;\n  var exports = undefined;\n  var define = undefined;\n${safeContent}\n}).call(window);\n</script>`;
+  }
+
   return `<script data-inline-source="${source}">\n${safeContent}\n</script>`;
 }
 
@@ -63,18 +64,28 @@ function inlineStyle (source, content) {
 
 let html = readSource("index.html");
 
-for (const { pattern, type, source } of replacements) {
+if (!styleReplacement.pattern.test(html)) {
+  throw new Error(`Nie znaleziono znacznika do podmiany: ${styleReplacement.source}`);
+}
+
+html = html.replace(
+  styleReplacement.pattern,
+  inlineStyle(styleReplacement.source, readSource(styleReplacement.source))
+);
+
+const inlineScripts = [];
+for (const { pattern, source, isolateModuleGlobals } of scriptReplacements) {
   const content = readSource(source);
-  const replacement = type === "script"
-    ? inlineScript(source, content)
-    : inlineStyle(source, content);
 
   if (!pattern.test(html)) {
     throw new Error(`Nie znaleziono znacznika do podmiany: ${source}`);
   }
 
-  html = html.replace(pattern, replacement);
+  html = html.replace(pattern, "");
+  inlineScripts.push(inlineScript(source, content, { isolateModuleGlobals }));
 }
+
+html = html.replace("</body>", `${inlineScripts.join("\n")}\n</body>`);
 
 fs.writeFileSync(outputPath, html);
 console.log(`Wygenerowano ${path.relative(rootDir, outputPath)}`);
